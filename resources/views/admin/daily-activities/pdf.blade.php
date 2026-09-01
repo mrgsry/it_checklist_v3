@@ -20,13 +20,15 @@
     <h1>Daily Activity Staff</h1>
     <p>Diekspor pada {{ now()->format('d/m/Y H:i') }} — {{ $activities->count() }} aktivitas sesuai filter.</p>
     <table>
-        <thead><tr><th>Tanggal</th><th>Staff</th><th>Aktivitas</th><th>Status</th><th>Catatan</th><th>Penugasan</th><th>Diperbarui</th></tr></thead>
+        <thead><tr><th>Tanggal</th><th>Staff</th><th>Jenis</th><th>Kategori</th><th>Aktivitas</th><th>Status</th><th>Catatan</th><th>Penugasan</th><th>Diperbarui</th></tr></thead>
         <tbody>
         @forelse($activities as $activity)
             @php($status = ['completed' => 'Selesai', 'in_progress' => 'Dalam Proses', 'blocked' => 'Terhambat'][$activity->status] ?? $activity->status)
             <tr>
                 <td>{{ $activity->activity_date?->format('d/m/Y') }}</td>
                 <td>{{ $activity->user?->name ?? '-' }}</td>
+                <td>{{ $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity' }}</td>
+                <td>{{ $activity->category }}</td>
                 <td>{{ $activity->activity }}</td>
                 <td class="status {{ $activity->status }}">{{ $status }}</td>
                 <td>{{ $activity->notes ?: '-' }}</td>
@@ -34,7 +36,7 @@
                 <td>{{ $activity->updated_at?->format('d/m/Y H:i') }}</td>
             </tr>
         @empty
-            <tr><td colspan="7">Belum ada aktivitas sesuai filter.</td></tr>
+            <tr><td colspan="9">Belum ada aktivitas sesuai filter.</td></tr>
         @endforelse
         </tbody>
     </table>

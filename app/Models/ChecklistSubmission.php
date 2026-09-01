@@ -8,12 +8,13 @@ class ChecklistSubmission extends Model
 {
     protected $fillable = [
         'form_id','submitted_by','submission_date',
-        'submitted_at','notes','status'
+        'submitted_at','notes','status','ticketing_data'
     ];
 
     protected $casts = [
         'submission_date' => 'date',
         'submitted_at'    => 'datetime',
+        'ticketing_data'  => 'array',
     ];
 
     public function form()

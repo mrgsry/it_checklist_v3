@@ -22,12 +22,13 @@ class DailyActivityAssignmentTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.daily-activities.store'), [
             'user_id' => $user->id, 'activity_date' => '2026-07-24',
-            'activity' => 'Periksa backup', 'notes' => 'Sebelum jam 10',
+            'activity' => 'Periksa backup', 'category' => 'Network/System', 'notes' => 'Sebelum jam 10',
         ])->assertRedirect(route('admin.daily-activities.index'));
 
         $activity = DailyActivity::firstOrFail();
         $this->assertSame($admin->id, $activity->assigned_by);
         $this->assertNotNull($activity->assigned_at);
+        $this->assertSame('Network/System', $activity->category);
         Notification::assertSentTo($user, DailyActivityAssignedNotification::class);
     }
 

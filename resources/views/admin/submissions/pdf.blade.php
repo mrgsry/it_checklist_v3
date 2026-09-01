@@ -19,8 +19,8 @@
         .label { display: block; color: #64748b; font-size: 7px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
         .submission { margin-bottom: 16px; }
         .submission-title { color: #163b68; font-size: 12px; font-weight: bold; border-left: 3px solid #3c8ed1; padding-left: 6px; margin: 0 0 7px; }
-        .data { width: 100%; border-collapse: collapse; margin: 0; }
-        .data th { background: #1d4f86; color: #fff; font-size: 8px; font-weight: bold; padding: 5px 6px; text-align: left; }
+        .data { width: 100%; border-collapse: collapse; margin: 0; table-layout: fixed; }
+        .data th { background: #1d4f86; color: #fff; font-size: 8px; font-weight: bold; padding: 5px 6px; text-align: left; }.data th.center, .center { text-align: center; }
         .data td { border: 1px solid #dbe3ed; padding: 6px; vertical-align: top; }
         .data tr { page-break-inside: avoid; }
         .data tbody tr:nth-child(even) { background: #f7fafe; }
@@ -28,6 +28,7 @@
         .status { display: inline-block; padding: 2px 5px; font-size: 7px; font-weight: bold; }
         .status-ok { color: #166534; background: #dcfce7; }.status-issue { color: #991b1b; background: #fee2e2; }
         .photo { max-width: 300px; max-height: 260px; display: block; margin-top: 5px; }
+        .checkbox-option { margin-bottom: 2px; }.checkbox-option:last-child { margin-bottom: 0; }.checkbox-mark { display: inline-block; width: 14px; text-align: center; }.abnormal-detail, .abnormal-mark { color: #b42318; font-weight: bold; }
         .empty { color: #64748b; text-align: center; padding: 14px; }
     </style>
 </head>
@@ -55,11 +56,11 @@
             <td><span class="label">Status</span><span class="status {{ $flaggedCount ? 'status-issue' : 'status-ok' }}">{{ $flaggedCount ? $flaggedCount.' masalah' : 'Lengkap' }}</span></td>
         </tr></table>
         @if($submission->notes)<p><strong>Catatan:</strong> {{ $submission->notes }}</p>@endif
-        <table class="data"><thead><tr><th style="width:35%">Item</th><th>Jawaban</th></tr></thead><tbody>
+        <table class="data"><colgroup><col style="width:30%"><col style="width:40%"><col style="width:15%"><col style="width:15%"></colgroup><thead><tr><th>Item</th><th>Detail Check</th><th class="center">Normal</th><th class="center">Tidak Normal</th></tr></thead><tbody>
             @forelse($submission->answers as $answer)
-                <tr><td class="{{ $answer->is_flagged ? 'flagged' : '' }}">{{ $answer->formItem?->label ?? '-' }}@if($answer->is_flagged)<br><span class="muted">Perlu perhatian</span>@endif</td><td class="{{ $answer->is_flagged ? 'flagged' : '' }}">@if($answer->formItem?->field_type === 'photo') @forelse($answer->photoDataUris ?? [] as $photoDataUri)<img class="photo" src="{{ $photoDataUri }}" alt="Foto jawaban">@empty <span class="muted">Foto tidak tersedia.</span> @endforelse @else {{ $answer->answer_value ?: '-' }} @endif</td></tr>
+                @if($answer->formItem?->field_type === 'checkbox' && filled($answer->formItem?->options)) @php($checkboxStatuses = $answer->checkboxStatuses()) @foreach($answer->formItem->options as $option) @php($isAbnormal = ($checkboxStatuses[$option] ?? null) === 'tidak_normal')<tr><td>{{ $loop->first ? ($answer->formItem?->label ?? '-') : '' }}</td><td class="{{ $isAbnormal ? 'abnormal-detail' : '' }}">{{ $option }}</td><td class="center">{{ ($checkboxStatuses[$option] ?? null) === 'normal' ? '☑' : '☐' }}</td><td class="center {{ $isAbnormal ? 'abnormal-mark' : '' }}">{{ $isAbnormal ? '☑' : '☐' }}</td></tr>@endforeach @else <tr><td>{{ $answer->formItem?->label ?? '-' }}</td><td colspan="3" class="{{ $answer->is_flagged ? 'flagged' : '' }}">@if($answer->formItem?->field_type === 'photo') @forelse($answer->photoDataUris ?? [] as $photoDataUri)<img class="photo" src="{{ $photoDataUri }}" alt="Foto jawaban">@empty <span class="muted">Foto tidak tersedia.</span> @endforelse @else {{ $answer->answer_value ?: '-' }} @endif</td></tr> @endif
             @empty
-                <tr><td colspan="2" class="empty">Tidak ada jawaban.</td></tr>
+                <tr><td colspan="4" class="empty">Tidak ada jawaban.</td></tr>
             @endforelse
         </tbody></table>
     </section>

@@ -213,16 +213,20 @@
 
                 @case('checkbox')
                 @if(is_array($item->options) && count($item->options) > 0)
-                @foreach($item->options as $opt)
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="answers[{{ $item->id }}][]"
-                        value="{{ $opt }}" id="cb_{{ $item->id }}_{{ $loop->index }}"
-                        {{ (is_array(old('answers.'.$item->id)) && in_array($opt, old('answers.'.$item->id))) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="cb_{{ $item->id }}_{{ $loop->index }}">
-                        {{ $opt }}
-                    </label>
-                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>Detail Check</th><th class="text-center">Normal</th><th class="text-center">Tidak Normal</th></tr></thead>
+                        <tbody>
+                @foreach($item->options as $index => $opt)
+                <tr>
+                    <td>{{ $opt }}</td>
+                    <td class="text-center"><input class="form-check-input" type="radio" name="answers[{{ $item->id }}][{{ $index }}]" value="normal" id="cb_{{ $item->id }}_{{ $index }}_normal" {{ old('answers.'.$item->id.'.'.$index) === 'normal' ? 'checked' : '' }} {{ $item->is_required ? 'required' : '' }} aria-label="{{ $opt }} Normal"></td>
+                    <td class="text-center"><input class="form-check-input" type="radio" name="answers[{{ $item->id }}][{{ $index }}]" value="tidak_normal" id="cb_{{ $item->id }}_{{ $index }}_abnormal" {{ old('answers.'.$item->id.'.'.$index) === 'tidak_normal' ? 'checked' : '' }} aria-label="{{ $opt }} Tidak Normal"></td>
+                </tr>
                 @endforeach
+                        </tbody>
+                    </table>
+                </div>
                 @endif
                 @break
 

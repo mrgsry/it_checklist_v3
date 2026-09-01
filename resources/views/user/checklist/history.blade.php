@@ -14,6 +14,8 @@
                 <thead>
                     <tr>
                         <th>Tanggal</th>
+                        <th>Jenis</th>
+                        <th>Kategori</th>
                         <th>Aktivitas / Task</th>
                         <th>Catatan</th>
                         <th>Status</th>
@@ -24,7 +26,9 @@
                     @php($status = ['completed' => ['success', 'Selesai'], 'in_progress' => ['warning', 'Dalam Proses'], 'blocked' => ['danger', 'Terhambat']][$dailyActivity->status])
                     <tr>
                         <td>{{ $dailyActivity->activity_date?->isoFormat('D MMM Y') }}</td>
-                        <td class="fw-semibold">{{ $dailyActivity->activity }}</td>
+                        <td>{{ $dailyActivity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity' }}</td>
+                        <td>{{ $dailyActivity->category }}</td>
+                        <td class="fw-semibold">{{ $dailyActivity->activity }} @if($dailyActivity->ticket_url)<a href="{{ $dailyActivity->ticket_url }}" target="_blank" rel="noopener">Lihat progress</a>@endif</td>
                         <td>{{ $dailyActivity->notes ?: '-' }}</td>
                         <td><span class="badge text-bg-{{ $status[0] }}">{{ $status[1] }}</span></td>
                     </tr>

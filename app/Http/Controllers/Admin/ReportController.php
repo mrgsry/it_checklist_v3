@@ -112,6 +112,9 @@ class ReportController extends Controller
                 'date' => $activity->activity_date?->format('d/m/Y'),
                 'staff' => $activity->user?->name ?? '-',
                 'activity' => $activity->activity,
+                'type' => $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity',
+                'category' => $activity->category,
+                'ticket_url' => $activity->ticket_url,
                 'status' => $activity->status,
                 'status_label' => [
                     'completed' => 'Selesai',
@@ -137,6 +140,8 @@ class ReportController extends Controller
             ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->integer('user_id')))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('activity_date', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('activity_date', '<=', $request->date_to))
+            ->when($request->filled('type'), fn ($q) => $q->ofType($request->type))
+            ->when($request->filled('category'), fn ($q) => $q->where('category', $request->category))
             ->orderByDesc('activity_date')->orderByDesc('updated_at')
             ->limit(300);
     }
@@ -161,6 +166,8 @@ class ReportController extends Controller
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'type' => ['nullable', 'in:daily_activity,ticketing'],
+            'category' => ['nullable', 'in:'.implode(',', DailyActivity::CATEGORIES)],
         ]);
     }
 

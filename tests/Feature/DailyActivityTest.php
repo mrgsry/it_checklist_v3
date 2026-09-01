@@ -23,6 +23,7 @@ class DailyActivityTest extends TestCase
             ->post(route('user.daily-activities.store'), [
                 'activity_date' => '2026-07-23',
                 'activity' => 'Monitoring server utama',
+                'category' => 'Network/System',
                 'status' => 'completed',
                 'notes' => 'Kondisi server normal.',
             ])
@@ -31,6 +32,7 @@ class DailyActivityTest extends TestCase
         $this->assertDatabaseHas('daily_activities', [
             'user_id' => $user->id,
             'activity' => 'Monitoring server utama',
+            'category' => 'Network/System',
             'status' => 'completed',
         ]);
     }

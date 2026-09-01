@@ -15,6 +15,8 @@ class DailyActivityFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
+            'type' => 'daily_activity',
+            'category' => fake()->randomElement(DailyActivity::CATEGORIES),
             'assigned_by' => null,
             'assigned_at' => null,
             'activity_date' => today(),

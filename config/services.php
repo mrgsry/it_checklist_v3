@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'terra_ticketing' => [
+        'base_url' => env('TERRA_TICKETING_BASE_URL', 'http://it-apps.terra.co.id/support'),
+        'api_key' => env('TERRA_TICKETING_API_KEY'),
+    ],
+
 ];

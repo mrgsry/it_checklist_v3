@@ -415,7 +415,7 @@ class DashboardController extends Controller
     private function dailyCardDetails(Carbon $today): array
     {
         $activities = DailyActivity::query()
-            ->select(['id', 'user_id', 'activity', 'status', 'updated_at'])
+            ->select(['id', 'user_id', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
             ->with('user:id,name')
             ->whereDate('activity_date', $today)
             ->latest('updated_at')
@@ -439,7 +439,7 @@ class DashboardController extends Controller
     private function attentionCardDetails(Carbon $today): array
     {
         $blockedActivities = DailyActivity::query()
-            ->select(['id', 'user_id', 'activity', 'status', 'updated_at'])
+            ->select(['id', 'user_id', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
             ->with('user:id,name')
             ->whereDate('activity_date', $today)
             ->where('status', 'blocked')
@@ -513,7 +513,7 @@ class DashboardController extends Controller
     private function activityFeed()
     {
         $activities = DailyActivity::query()
-            ->select(['id', 'user_id', 'activity', 'status', 'updated_at'])
+            ->select(['id', 'user_id', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
             ->with(['user:id,name'])
             ->latest('updated_at')
             ->limit(15)
@@ -522,7 +522,9 @@ class DashboardController extends Controller
                 'id' => 'daily-'.$activity->id,
                 'user' => $activity->user?->name ?? '-',
                 'activity' => $activity->activity,
-                'type' => 'Daily Activity',
+                'type' => $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity',
+                'category' => $activity->category,
+                'ticket_url' => $activity->ticket_url,
                 'status' => $activity->status,
                 'updated_at' => $activity->updated_at?->toIso8601String(),
                 'updated_label' => $activity->updated_at?->format('d M Y, H:i'),

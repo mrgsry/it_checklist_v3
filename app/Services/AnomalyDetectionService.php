@@ -38,6 +38,17 @@ class AnomalyDetectionService
         $anomalies = [];
         
         foreach ($submission->answers as $answer) {
+            if ($answer->formItem?->field_type === 'checkbox' && $answer->hasAbnormalCheckboxStatus()) {
+                $answer->update(['is_flagged' => true]);
+                $anomalies[] = [
+                    'type' => 'checkbox_status',
+                    'severity' => 'high',
+                    'message' => "Item '{$answer->formItem->label}' memiliki detail check Tidak Normal.",
+                ];
+
+                continue;
+            }
+
             $value = strtolower($answer->answer_value ?? '');
             
             foreach ($this->anomalyKeywords as $keyword) {

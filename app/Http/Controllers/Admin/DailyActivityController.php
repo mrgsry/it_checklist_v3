@@ -19,6 +19,7 @@ class DailyActivityController extends Controller
             'user_id' => 'required|exists:users,id',
             'activity_date' => 'required|date',
             'activity' => 'required|string|max:255',
+            'category' => ['nullable', 'in:'.implode(',', DailyActivity::CATEGORIES)],
             'notes' => 'nullable|string|max:2000',
         ]);
 
@@ -72,6 +73,8 @@ class DailyActivityController extends Controller
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'status' => ['nullable', 'in:completed,in_progress,blocked'],
+            'category' => ['nullable', 'in:'.implode(',', DailyActivity::CATEGORIES)],
+            'type' => ['nullable', 'in:daily_activity,ticketing'],
         ]);
 
         return DailyActivity::with(['user', 'assigner'])
@@ -79,6 +82,8 @@ class DailyActivityController extends Controller
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('activity_date', '<=', $request->date_to))
             ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', $request->integer('user_id')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
+            ->when($request->filled('category'), fn ($query) => $query->where('category', $request->category))
+            ->when($request->filled('type'), fn ($query) => $query->ofType($request->type))
             ->orderByDesc('activity_date')
             ->latest();
     }

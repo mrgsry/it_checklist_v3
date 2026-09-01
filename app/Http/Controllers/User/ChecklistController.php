@@ -73,6 +73,11 @@ class ChecklistController extends Controller
             if ($item->field_type === 'photo') {
                 $rules["answers.{$item->id}"] = $item->is_required ? 'required|array|min:1|max:5' : 'nullable|array|max:5';
                 $rules["answers.{$item->id}.*"] = 'image|mimes:jpg,jpeg,png|max:5120';
+            } elseif ($item->field_type === 'checkbox') {
+                $rules["answers.{$item->id}"] = $item->is_required ? 'required|array' : 'nullable|array';
+                foreach ($item->options ?? [] as $index => $option) {
+                    $rules["answers.{$item->id}.{$index}"] = ($item->is_required ? 'required' : 'nullable').'|in:normal,tidak_normal';
+                }
             } elseif ($item->is_required) {
                 $rules["answers.{$item->id}"] = 'required';
             }
@@ -129,7 +134,14 @@ class ChecklistController extends Controller
                     $value = $paths === [] ? null : json_encode($paths, JSON_THROW_ON_ERROR);
                 } else {
                     $value = $answers[$item->id] ?? null;
-                    if (is_array($value)) {
+                    if ($item->field_type === 'checkbox' && is_array($value)) {
+                        $value = json_encode(
+                            collect($item->options ?? [])->mapWithKeys(
+                                fn (string $option, int $index) => [$option => $value[$index] ?? null]
+                            )->filter()->all(),
+                            JSON_THROW_ON_ERROR
+                        );
+                    } elseif (is_array($value)) {
                         $value = implode(', ', $value);
                     }
                 }

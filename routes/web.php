@@ -11,6 +11,10 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Ticketing callback: Terra calls this when a ticket changes status.
+Route::post('/api/ticketing/tickets/{submission}/status', [Admin\TicketingController::class, 'status'])
+    ->name('api.ticketing.status');
+
 // ─── ADMIN ─────────────────────────────────────────────
 Route::prefix('admin')
     ->middleware(['auth', 'role:admin,superadmin'])
@@ -28,6 +32,13 @@ Route::prefix('admin')
         Route::get('submissions', [Admin\SubmissionController::class, 'index'])->name('submissions.index');
         Route::get('submissions/{submission}/export-pdf', [Admin\SubmissionController::class, 'exportPdf'])->name('submissions.export-pdf');
         Route::get('submissions/{submission}', [Admin\SubmissionController::class, 'show'])->name('submissions.show');
+
+        // Terra Support ticketing proxy
+        Route::get('ticketing/departments', [Admin\TicketingController::class, 'departments'])->name('ticketing.departments');
+        Route::get('ticketing/types', [Admin\TicketingController::class, 'types'])->name('ticketing.types');
+        Route::get('ticketing/categories', [Admin\TicketingController::class, 'categories'])->name('ticketing.categories');
+        Route::post('ticketing/tickets/{submission}', [Admin\TicketingController::class, 'create'])->name('ticketing.create');
+        Route::post('ticketing/tickets/{submission}/status', [Admin\TicketingController::class, 'status'])->name('ticketing.status');
 
         // Reports
         Route::get('reports', [Admin\ReportController::class, 'index'])->name('reports.index');

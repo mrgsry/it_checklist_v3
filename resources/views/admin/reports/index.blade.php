@@ -37,6 +37,8 @@
                 <label for="filter_date_to" class="form-label small">Sampai Tanggal</label>
                 <input type="date" id="filter_date_to" name="date_to" class="form-control" value="{{ request('date_to') }}">
             </div>
+            <div class="col-md-2"><label for="filter_type" class="form-label small">Jenis</label><select id="filter_type" name="type" class="form-select"><option value="">Semua Jenis</option><option value="daily_activity" @selected(request('type') === 'daily_activity')>Daily Activity</option><option value="ticketing" @selected(request('type') === 'ticketing')>Ticketing</option></select></div>
+            <div class="col-md-2"><label for="filter_category" class="form-label small">Kategori</label><select id="filter_category" name="category" class="form-select"><option value="">Semua Kategori</option>@foreach(\App\Models\DailyActivity::CATEGORIES as $category)<option value="{{ $category }}" @selected(request('category') === $category)>{{ $category }}</option>@endforeach</select></div>
             <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Tampilkan</button></div>
         </form>
     </div>
@@ -101,6 +103,8 @@
                     <tr>
                         <th>Tanggal</th>
                         <th>Staff</th>
+                        <th>Jenis</th>
+                        <th>Kategori</th>
                         <th>Aktivitas</th>
                         <th>Status</th>
                         <th>Catatan</th>
@@ -127,7 +131,9 @@
                     <tr>
                         <td>{{ $activity->activity_date?->format('d/m/Y') }}</td>
                         <td class="fw-semibold">{{ $activity->user?->name ?? '-' }}</td>
-                        <td>{{ $activity->activity }}</td>
+                        <td>{{ $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity' }}</td>
+                        <td>{{ $activity->category }}</td>
+                        <td>{{ $activity->activity }} @if($activity->ticket_url)<a href="{{ $activity->ticket_url }}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>@endif</td>
                         <td>
                             <span class="chip {{ $statusClass }}">
                                 <span class="chip-buffering-label">{{ $statusText }}</span>
@@ -139,7 +145,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Belum ada daily activity sesuai filter.</td>
+                        <td colspan="9" class="text-center text-muted py-4">Belum ada daily activity sesuai filter.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -346,7 +352,9 @@
             <tr>
                 <td>${escapeHtml(activity.date)}</td>
                 <td class="fw-semibold">${escapeHtml(activity.staff)}</td>
-                <td>${escapeHtml(activity.activity)}</td>
+                <td>${escapeHtml(activity.type)}</td>
+                <td>${escapeHtml(activity.category)}</td>
+                <td>${escapeHtml(activity.activity)}${activity.ticket_url ? ` <a href="${escapeHtml(activity.ticket_url)}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>` : ''}</td>
                 <td><span class="chip ${statusClass}"><span class="chip-buffering-label">${escapeHtml(label)}</span></span></td>
                 <td class="text-muted">${escapeHtml(activity.notes)}</td>
                 <td>${escapeHtml(activity.assignee)}</td>
@@ -375,7 +383,7 @@
     const renderActivities = (items) => {
         tableBody.innerHTML = items.length
             ? items.map(renderRow).join('')
-            : `<tr><td colspan="7" class="text-center text-muted py-4">Belum ada daily activity sesuai filter.</td></tr>`;
+            : `<tr><td colspan="9" class="text-center text-muted py-4">Belum ada daily activity sesuai filter.</td></tr>`;
     };
 
     const fetchData = async () => {

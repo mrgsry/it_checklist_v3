@@ -22,6 +22,16 @@
                         @error('activity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-3">
+                        <label for="category" class="form-label">Kategori</label>
+                        <select id="category" name="category" class="form-select @error('category') is-invalid @enderror" required>
+                            <option value="">Pilih kategori</option>
+                            @foreach(\App\Models\DailyActivity::CATEGORIES as $category)
+                                <option value="{{ $category }}" @selected(old('category') === $category)>{{ $category }}</option>
+                            @endforeach
+                        </select>
+                        @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-3">
                         <label for="status" class="form-label">Status</label>
                         <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
                             <option value="completed" @selected(old('status') === 'completed')>Selesai</option>
@@ -60,6 +70,7 @@
                         <div class="d-flex justify-content-between gap-3">
                             <div>
                                 <div class="fw-semibold">{{ $dailyActivity->activity }}</div>
+                                <span class="badge text-bg-light border">{{ $dailyActivity->category }}</span>
                                 @if($dailyActivity->notes)<p class="text-muted mb-0 mt-1">{{ $dailyActivity->notes }}</p>@endif
                                 <small class="text-muted">Diperbarui {{ $dailyActivity->updated_at->format('H:i') }}</small>
                             </div>
