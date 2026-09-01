@@ -4,11 +4,11 @@
 @section('page-title', 'Manajemen User')
 
 @section('content')
-<div class="card">
+<div class="card-createspace">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title mb-0">Daftar User</h5>
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="font-headline font-semibold mb-0">Daftar User</h5>
+            <a href="{{ route('admin.users.create') }}" class="btn-createspace btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i>Tambah User
             </a>
         </div>
@@ -32,26 +32,28 @@
                         <td>{{ $user->email }}</td>
                         <td>
                             @if($user->role === 'superadmin')
-                                <span class="badge bg-dark">Super Admin</span>
+                                <span class="chip chip-status-archived" style="background-color: #1F2937; color: #FFFFFF;">Super Admin</span>
                             @elseif($user->role === 'admin')
-                                <span class="badge bg-info">Admin</span>
+                                <span class="chip chip-status-active">Admin</span>
                             @else
-                                <span class="badge bg-secondary">User</span>
+                                <span class="chip chip-status-archived">User</span>
                             @endif
                         </td>
                         <td>{{ $user->assignments_count ?? 0 }}</td>
                         <td>{{ $user->submissions_count ?? 0 }}</td>
                         <td>
-                            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-warning">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="d-inline" onsubmit="return confirm('Yakin hapus user ini?');">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-danger" {{ $user->id === auth()->id() ? 'disabled' : '' }}>
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            <div class="d-flex gap-1">
+                                <a href="{{ route('admin.users.edit', $user) }}" class="btn-createspace btn-sm btn-secondary" style="min-width: 32px; padding: 0; background-color: #FACC15; color: #000;">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="d-inline" onsubmit="return confirm('Yakin hapus user ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn-createspace btn-sm btn-destructive" style="min-width: 32px; padding: 0;" {{ $user->id === auth()->id() ? 'disabled' : '' }}>
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

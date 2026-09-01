@@ -6,42 +6,98 @@ use App\Http\Controllers\Controller;
 use App\Models\ChecklistSubmission;
 use App\Models\ChecklistForm;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SubmissionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ChecklistSubmission::with(['form', 'submitter', 'answers'])
-            ->latest('submitted_at');
+        $data = $this->submissionData($request);
+        $submissions = $data['query']->paginate(15)->withQueryString();
 
-        // Filter
-        if ($request->filled('form_id')) {
-            $query->where('form_id', $request->form_id);
-        }
-        if ($request->filled('user_id')) {
-            $query->where('submitted_by', $request->user_id);
-        }
-        if ($request->filled('date_from')) {
-            $query->whereDate('submission_date', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('submission_date', '<=', $request->date_to);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->boolean('format_json') || $request->wantsJson()) {
+            return response()->json([
+                'data' => $submissions->getCollection()->map(fn ($submission) => [
+                    'id' => $submission->id,
+                    'form_title' => $submission->form->title ?? '-',
+                    'user_name' => $submission->submitter->name ?? '-',
+                    'submission_date' => $submission->submission_date?->isoFormat('D MMM Y'),
+                    'submitted_at' => $submission->submitted_at?->format('H:i'),
+                    'flagged_count' => $submission->answers->where('is_flagged', true)->count(),
+                    'show_url' => route('admin.submissions.show', $submission),
+                ])->values(),
+                'meta' => [
+                    'current_page' => $submissions->currentPage(),
+                    'last_page' => $submissions->lastPage(),
+                    'total' => $submissions->total(),
+                    'from' => $submissions->firstItem(),
+                    'to' => $submissions->lastItem(),
+                ],
+            ]);
         }
 
-        $submissions = $query->paginate(15)->withQueryString();
-        $forms = ChecklistForm::orderBy('title')->get();
-        $users = User::where('role', 'user')->orderBy('name')->get();
+        return view('admin.submissions.index', array_merge($data, compact('submissions')));
+    }
 
-        return view('admin.submissions.index', compact('submissions', 'forms', 'users'));
+    public function exportPdf(ChecklistSubmission $submission)
+    {
+        $submission->load(['form', 'submitter', 'answers.formItem']);
+
+        foreach ($submission->answers as $answer) {
+            if ($answer->formItem?->field_type === 'photo' && filled($answer->answer_value)) {
+                $answer->photoDataUris = array_filter(array_map(
+                    fn (string $path) => $this->photoDataUri($path),
+                    $answer->photoPaths()
+                ));
+            }
+        }
+
+        $logoDataUri = $this->photoDataUri('checklist-photos/tdi-2.png');
+
+        return Pdf::loadView('admin.submissions.pdf', compact('submission', 'logoDataUri'))
+            ->setPaper('a4')
+            ->download('submission-'.$submission->id.'-'.now()->format('Ymd-His').'.pdf');
     }
 
     public function show(ChecklistSubmission $submission)
     {
         $submission->load(['form.items', 'submitter', 'answers.formItem']);
         return view('admin.submissions.show', compact('submission'));
+    }
+
+    private function submissionData(Request $request): array
+    {
+        $request->validate([
+            'form_id' => ['nullable', 'integer', 'exists:checklist_forms,id'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+
+        $query = ChecklistSubmission::with(['form', 'submitter', 'answers.formItem'])
+            ->when($request->filled('form_id'), fn ($builder) => $builder->where('form_id', $request->integer('form_id')))
+            ->when($request->filled('user_id'), fn ($builder) => $builder->where('submitted_by', $request->integer('user_id')))
+            ->when($request->filled('date_from'), fn ($builder) => $builder->whereDate('submission_date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($builder) => $builder->whereDate('submission_date', '<=', $request->date_to))
+            ->latest('submitted_at');
+
+        $forms = ChecklistForm::orderBy('title')->get();
+        $users = User::where('role', 'user')->orderBy('name')->get();
+
+        return compact('query', 'forms', 'users');
+    }
+
+    private function photoDataUri(string $path): ?string
+    {
+        if (! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $absolutePath = Storage::disk('public')->path($path);
+        $mimeType = mime_content_type($absolutePath) ?: 'image/jpeg';
+
+        return 'data:'.$mimeType.';base64,'.base64_encode((string) Storage::disk('public')->get($path));
     }
 }

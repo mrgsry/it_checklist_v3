@@ -9,11 +9,15 @@ export default defineConfig({
         }),
     ],
     server: {
-        host: true,
+        host: '0.0.0.0',
         port: 5175,
         hmr: {
-            host: "192.168.21.113",
+            host: "192.168.21.233",
             protocol: "ws",
+        },
+        cors: {
+            origin: '*',
+            credentials: true,
         },
     },
 });

@@ -11,18 +11,27 @@
 @if(count($formsDue) > 0)
 <div class="row g-3">
     @foreach($formsDue as $form)
+    @php($isSubmitted = $submittedFormIds->contains($form->id))
     <div class="col-md-6 col-lg-4">
-        <div class="card h-100 border-start border-4 border-danger">
+        <div class="card h-100 border-start border-4 {{ $isSubmitted ? 'border-success' : 'border-danger' }}">
             <div class="card-body">
-                <span class="badge bg-danger mb-2">Belum Diisi</span>
+                <span class="badge {{ $isSubmitted ? 'bg-success' : 'bg-danger' }} mb-2">
+                    {{ $isSubmitted ? 'Form Complete' : 'Belum Diisi' }}
+                </span>
                 <h6 class="card-title fw-bold">{{ $form->title }}</h6>
                 <p class="card-text small text-muted mb-1">
                     <i class="fas fa-clock me-1"></i>
                     Deadline: Hari ini | {{ ucfirst($form->schedule_type) }}
                 </p>
+                @if($isSubmitted)
+                <p class="small text-success mb-0 mt-3">
+                    <i class="fas fa-check-circle me-1"></i>Form sudah disubmit.
+                </p>
+                @else
                 <a href="{{ route('user.checklist.fill', $form->id) }}" class="btn btn-sm btn-primary mt-3 w-100">
                     <i class="fas fa-edit me-1"></i>Isi Sekarang
                 </a>
+                @endif
             </div>
         </div>
     </div>

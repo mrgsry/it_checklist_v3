@@ -4,11 +4,11 @@
 @section('page-title', 'Form Checklist')
 
 @section('content')
-<div class="card">
+<div class="card-createspace">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title mb-0">Daftar Form</h5>
-            <a href="{{ route('admin.forms.create') }}" class="btn btn-primary btn-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="font-headline font-semibold mb-0">Daftar Form</h5>
+            <a href="{{ route('admin.forms.create') }}" class="btn-createspace btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i>Buat Form Baru
             </a>
         </div>
@@ -28,42 +28,42 @@
                     @forelse($forms as $form)
                     <tr>
                         <td>
-                            <div class="fw-semibold">{{ $form->title }}</div>
-                            <div class="small text-muted">{{ Str::limit($form->description, 40) }}</div>
+                            <div class="font-body font-semibold">{{ $form->title }}</div>
+                            <div class="text-caption text-muted">{{ Str::limit($form->description, 40) }}</div>
                         </td>
                         <td>
-                            <span class="badge bg-light text-dark">{{ ucfirst($form->schedule_type) }}</span>
+                            <span class="chip chip-filter">{{ ucfirst($form->schedule_type) }}</span>
                         </td>
                         <td>{{ $form->items_count ?? $form->items->count() }}</td>
                         <td>
                             @if($form->is_active)
-                            <span class="badge bg-success">Active</span>
+                            <span class="chip chip-status-active">Active</span>
                             @else
-                            <span class="badge bg-secondary">Inactive</span>
+                            <span class="chip chip-status-archived">Inactive</span>
                             @endif
                         </td>
                         <td>
                             <div class="d-flex gap-1">
-                                <a href="{{ route('admin.forms.show', $form) }}" class="btn btn-sm btn-info"
-                                    title="Preview">
+                                <a href="{{ route('admin.forms.show', $form) }}" class="btn-createspace btn-sm btn-secondary"
+                                    title="Preview" style="min-width: 32px; padding: 0;">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.forms.edit', $form) }}" class="btn btn-sm btn-warning"
-                                    title="Edit">
+                                <a href="{{ route('admin.forms.edit', $form) }}" class="btn-createspace btn-sm btn-secondary"
+                                    title="Edit" style="min-width: 32px; padding: 0; background-color: #FACC15; color: #000;">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form method="POST" action="{{ route('admin.forms.toggle', $form) }}" class="d-inline"
                                     title="Toggle Status">
                                     @csrf
                                     <button type="submit"
-                                        class="btn btn-sm btn-outline-{{ $form->is_active ? 'secondary' : 'success' }}">
+                                        class="btn-createspace btn-sm btn-ghost" style="min-width: 32px; padding: 0;">
                                         <i class="fas fa-power-off"></i>
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.forms.duplicate', $form) }}"
                                     class="d-inline" title="Duplikat">
                                     @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-info">
+                                    <button type="submit" class="btn-createspace btn-sm btn-ghost" style="min-width: 32px; padding: 0; color: #2563EB; border-color: #2563EB;">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </form>
@@ -71,7 +71,7 @@
                                     onsubmit="return confirm('Yakin hapus form ini?')" title="Hapus">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <button type="submit" class="btn-createspace btn-sm btn-destructive" style="min-width: 32px; padding: 0;">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>

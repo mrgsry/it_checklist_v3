@@ -1,9 +1,47 @@
 @extends('layouts.user')
 
-@section('title', 'Riwayat Checklist')
-@section('page-title', 'Riwayat Pengisian')
+@section('title', 'Riwayat Saya')
+@section('page-title', 'Riwayat Saya')
 
 @section('content')
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Riwayat Daily Activity</h5>
+
+        @if($dailyActivities->count())
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Aktivitas / Task</th>
+                        <th>Catatan</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($dailyActivities as $dailyActivity)
+                    @php($status = ['completed' => ['success', 'Selesai'], 'in_progress' => ['warning', 'Dalam Proses'], 'blocked' => ['danger', 'Terhambat']][$dailyActivity->status])
+                    <tr>
+                        <td>{{ $dailyActivity->activity_date?->isoFormat('D MMM Y') }}</td>
+                        <td class="fw-semibold">{{ $dailyActivity->activity }}</td>
+                        <td>{{ $dailyActivity->notes ?: '-' }}</td>
+                        <td><span class="badge text-bg-{{ $status[0] }}">{{ $status[1] }}</span></td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        {{ $dailyActivities->links() }}
+        @else
+        <div class="text-center py-4 text-muted">
+            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+            <p class="mb-0">Belum ada riwayat daily activity</p>
+        </div>
+        @endif
+    </div>
+</div>
+
 <div class="card">
     <div class="card-body">
         <h5 class="card-title mb-3">Riwayat Submission</h5>
@@ -23,26 +61,26 @@
                 </thead>
                 <tbody>
                     @foreach($submissions as $sub)
-                    @php
-                        $photoAnswers = $sub->answers->filter(fn($answer) =>
-                            $answer->formItem?->field_type === 'photo' && !empty($answer->answer_value)
-                        );
-                    @endphp
                     <tr>
                         <td>{{ $sub->form->title ?? '-' }}</td>
                         <td>
-                            @if($photoAnswers->isNotEmpty())
+                            @php($hasPhotos = $sub->answers->contains(fn ($answer) => $answer->formItem?->field_type === 'photo' && $answer->photoPaths() !== []))
+                            @unless($hasPhotos)
+                                <span class="text-muted">-</span>
+                            @else
                                 <div class="d-flex flex-wrap gap-2">
-                                    @foreach($photoAnswers as $answer)
-                                        <img src="{{ Storage::url($answer->answer_value) }}"
-                                            alt="Preview Foto"
-                                            class="img-thumbnail"
-                                            style="width:72px;height:72px;object-fit:cover;">
+                                    @foreach($sub->answers as $answer)
+                                        @if($answer->formItem?->field_type === 'photo')
+                                            @foreach($answer->photoPaths() as $path)
+                                            <img src="{{ Storage::url($path) }}"
+                                                alt="Preview Foto"
+                                                class="img-thumbnail"
+                                                style="width:72px;height:72px;object-fit:cover;">
+                                            @endforeach
+                                        @endif
                                     @endforeach
                                 </div>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
+                            @endunless
                         </td>
                         <td>{{ $sub->submission_date?->isoFormat('D MMM Y') }}</td>
                         <td>{{ $sub->submitted_at?->format('H:i') }}</td>
@@ -72,4 +110,5 @@
         </div>
         @endif
     </div>
-    @endsection
+</div>
+@endsection

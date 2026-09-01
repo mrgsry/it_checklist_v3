@@ -5,54 +5,112 @@
 
 @section('content')
 
-{{-- Stat Cards --}}
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card p-3 border-start border-4 border-primary h-100 stat-card" data-stat="forms">
+@php($metrics = $dashboardMetrics ?? [])
+
+{{-- Monitoring Cards --}}
+<div class="row g-3 mb-4" id="metrics-cards-container">
+    <div class="col-12 col-md-6 col-xl-3">
+        <button type="button" class="card-createspace p-3 stat-card dashboard-detail-trigger text-start w-100 border-0" data-stat="forms" data-card-detail="forms" style="border-left: 4px solid #E11D48;">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="flex-grow-1">
-                    <div class="small text-muted mb-1">Total Form</div>
-                    <h3 class="mb-0 fw-bold text-primary">{{ $totalForms ?? 0 }}</h3>
-                    <small class="text-muted d-none d-sm-inline">Active checklists</small>
+                    <div class="text-caption mb-1">Submit Form Hari Ini</div>
+                    <h3 class="mb-0 font-headline text-primary"><span data-metric="todaySubmissions">{{ $metrics['todaySubmissions'] ?? 0 }}</span> <small class="text-muted fs-6">/ <span data-metric="todayAssignments">{{ $metrics['todayAssignments'] ?? 0 }}</span></small></h3>
+                    <small class="text-muted"><span data-metric="submissionProgress">{{ $metrics['submissionProgress'] ?? 0 }}</span>% selesai · <span data-metric="pendingSubmissions">{{ $metrics['pendingSubmissions'] ?? 0 }}</span> belum submit</small>
                 </div>
                 <i class="fas fa-wpforms fa-2x text-primary opacity-25 ms-2"></i>
             </div>
-        </div>
+        </button>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 border-start border-4 border-success h-100 stat-card" data-stat="submissions">
+    <div class="col-12 col-md-6 col-xl-3">
+        <button type="button" class="card-createspace p-3 stat-card dashboard-detail-trigger text-start w-100 border-0" data-stat="daily" data-card-detail="daily" style="border-left: 4px solid #16A34A;">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="flex-grow-1">
-                    <div class="small text-muted mb-1">Submissions</div>
-                    <h3 class="mb-0 fw-bold text-success">{{ $totalSubmissions ?? 0 }}</h3>
-                    <small class="text-muted d-none d-sm-inline">Total completed</small>
+                    <div class="text-caption mb-1">Daily Activity Hari Ini</div>
+                    <h3 class="mb-0 font-headline text-success"><span data-metric="dailyActivityCompleted">{{ $metrics['dailyActivityCompleted'] ?? 0 }}</span> <small class="text-muted fs-6">/ <span data-metric="dailyActivityTotal">{{ $metrics['dailyActivityTotal'] ?? 0 }}</span></small></h3>
+                    <small class="text-muted"><span data-metric="dailyActivityProgress">{{ $metrics['dailyActivityProgress'] ?? 0 }}</span>% selesai · <span data-metric="dailyActivityInProgress">{{ $metrics['dailyActivityInProgress'] ?? 0 }}</span> berjalan</small>
                 </div>
                 <i class="fas fa-inbox fa-2x text-success opacity-25 ms-2"></i>
             </div>
-        </div>
+        </button>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 border-start border-4 border-info h-100 stat-card" data-stat="compliance">
+    <div class="col-12 col-md-6 col-xl-3">
+        <button type="button" class="card-createspace p-3 stat-card dashboard-detail-trigger text-start w-100 border-0" data-stat="compliance" data-card-detail="attention" style="border-left: 4px solid #2563EB;">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="flex-grow-1">
-                    <div class="small text-muted mb-1">Compliance Rate</div>
-                    <h3 class="mb-0 fw-bold text-info">{{ $complianceRate ?? 0 }}%</h3>
-                    <small class="text-muted d-none d-sm-inline">This week</small>
+                    <div class="text-caption mb-1">Perlu Perhatian</div>
+                    <h3 class="mb-0 font-headline text-info"><span data-metric="attentionCount">{{ $metrics['attentionCount'] ?? 0 }}</span></h3>
+                    <small class="text-muted">Belum submit, blocked, atau issue</small>
                 </div>
                 <i class="fas fa-chart-line fa-2x text-info opacity-25 ms-2"></i>
             </div>
-        </div>
+        </button>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 border-start border-4 border-danger h-100 stat-card" data-stat="issues">
+    <div class="col-12 col-md-6 col-xl-3">
+        <button type="button" class="card-createspace p-3 stat-card dashboard-detail-trigger text-start w-100 border-0" data-stat="issues" data-card-detail="issues" style="border-left: 4px solid #DC2626;">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="flex-grow-1">
-                    <div class="small text-muted mb-1">Issues Today</div>
-                    <h3 class="mb-0 fw-bold text-danger">{{ $issuesToday ?? 0 }}</h3>
-                    <small class="text-muted d-none d-sm-inline">Need attention</small>
+                    <div class="text-caption mb-1">Daily Activity Terhambat</div>
+                    <h3 class="mb-0 font-headline text-error"><span data-metric="dailyActivityBlocked">{{ $metrics['dailyActivityBlocked'] ?? 0 }}</span></h3>
+                    <small class="text-muted">Issue submit form: {{ $issuesToday ?? 0 }}</small>
                 </div>
-                <i class="fas fa-exclamation-triangle fa-2x text-danger opacity-25 ms-2"></i>
+                <i class="fas fa-exclamation-triangle fa-2x text-error opacity-25 ms-2"></i>
             </div>
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="dashboard-detail-modal" tabindex="-1" aria-labelledby="dashboard-detail-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="dashboard-detail-title">Detail Dashboard</h5>
+                    <p class="text-muted small mb-0" id="dashboard-detail-summary"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-0" id="dashboard-detail-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4" id="activity-monitor-panel">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="mb-1">Aktivitas User Saat Ini</h5>
+                <p class="text-muted small mb-0">Daily Activity dan Submit Form terbaru</p>
+            </div>
+            <span class="badge text-bg-light" id="activity-monitor-status">Memuat...</span>
+        </div>
+        <div class="table-responsive activity-monitor-scroll">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="sticky-top bg-white"><tr><th>User</th><th>Aktivitas Terakhir</th><th>Jenis</th><th>Status</th><th>Waktu Pembaruan</th></tr></thead>
+                <tbody id="activity-monitor-body">
+                @forelse($activityFeed as $item)
+                    <tr data-activity-id="{{ $item['id'] }}">
+                        <td class="fw-semibold">{{ $item['user'] }}</td>
+                        <td>{{ $item['activity'] }}</td>
+                        <td><span class="badge text-bg-info">{{ $item['type'] }}</span></td>
+                        <td>
+                            @php($statusText = match($item['status']) {
+                                'completed' => 'Selesai',
+                                'in_progress' => 'Progress',
+                                'pending' => 'Pending',
+                                'blocked' => 'Terhambat',
+                                default => $item['status'],
+                            })
+                            <span class="chip {{ in_array($item['status'], ['in_progress', 'pending']) ? 'chip-status-pending' : ($item['status'] === 'completed' ? 'chip-status-done' : 'chip-status-archived') }}">
+                                <span class="chip-buffering-label">{{ $statusText }}</span>
+                            </span>
+                        </td>
+                        <td>{{ $item['updated_label'] }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -88,17 +146,29 @@
     <div class="col-12 col-lg-8">
         <div class="card p-3 h-100">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
-                <h6 class="fw-bold mb-0">Submissions Trend</h6>
-                <div class="btn-group btn-group-sm w-100 w-sm-auto" role="group">
-                    <button type="button" class="btn btn-outline-primary active flex-fill" data-chart-type="line">
-                        <i class="fas fa-chart-line d-sm-none"></i> <span class="d-none d-sm-inline">Line</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-primary flex-fill" data-chart-type="bar">
-                        <i class="fas fa-chart-bar d-sm-none"></i> <span class="d-none d-sm-inline">Bar</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-primary flex-fill" data-chart-type="area">
-                        <i class="fas fa-chart-area d-sm-none"></i> <span class="d-none d-sm-inline">Area</span>
-                    </button>
+                <div>
+                    <h6 class="fw-bold mb-0">Trend Daily Activity</h6>
+                    <small class="text-muted">Menampilkan kurva aktivitas harian berdasarkan periode</small>
+                </div>
+                <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+                    <form method="GET" action="{{ route('admin.dashboard') }}" class="d-flex">
+                        <select name="trend_period" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="week" @selected(($trendPeriod ?? 'week') === 'week')>1 Minggu</option>
+                            <option value="month" @selected(($trendPeriod ?? 'week') === 'month')>1 Bulan</option>
+                            <option value="year" @selected(($trendPeriod ?? 'week') === 'year')>1 Tahun</option>
+                        </select>
+                    </form>
+                    <div class="btn-group btn-group-sm w-100 w-sm-auto" role="group">
+                        <button type="button" class="btn btn-outline-primary active flex-fill" data-chart-type="line">
+                            <i class="fas fa-chart-line d-sm-none"></i> <span class="d-none d-sm-inline">Line</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary flex-fill" data-chart-type="bar">
+                            <i class="fas fa-chart-bar d-sm-none"></i> <span class="d-none d-sm-inline">Bar</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary flex-fill" data-chart-type="area">
+                            <i class="fas fa-chart-area d-sm-none"></i> <span class="d-none d-sm-inline">Area</span>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="chart-container">
@@ -109,7 +179,8 @@
 
     <div class="col-12 col-lg-4">
         <div class="card p-3 h-100">
-            <h6 class="fw-bold mb-3">Status Overview</h6>
+            <h6 class="fw-bold mb-1">Daily Task per User</h6>
+            <p class="text-muted small mb-2">Jumlah daily task yang ditangani tiap user</p>
             <div class="chart-container">
                 <canvas id="statusPieChart" style="max-height: 250px;"></canvas>
             </div>
@@ -117,14 +188,14 @@
                 <div class="row g-2">
                     <div class="col-6">
                         <div class="text-center p-2 bg-success bg-opacity-10 rounded">
-                            <div class="small text-muted">OK</div>
-                            <div class="fw-bold text-success">{{ $statusData['ok'] ?? 0 }}</div>
+                            <div class="small text-muted">Daily selesai</div>
+                            <div class="fw-bold text-success">{{ $metrics['dailyActivityCompleted'] ?? 0 }}</div>
                         </div>
                     </div>
                     <div class="col-6">
-                        <div class="text-center p-2 bg-danger bg-opacity-10 rounded">
-                            <div class="small text-muted">Issues</div>
-                            <div class="fw-bold text-danger">{{ $statusData['issues'] ?? 0 }}</div>
+                        <div class="text-center p-2 bg-warning bg-opacity-10 rounded">
+                            <div class="small text-muted">Masih progress</div>
+                            <div class="fw-bold text-warning">{{ $metrics['dailyActivityInProgress'] ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
@@ -229,59 +300,31 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($recentSubmissions ?? [] as $sub)
-                            <tr class="d-md-table-row d-block d-md-none border-bottom mb-3 pb-3">
-                                <td class="d-block border-0 p-0">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <strong class="text-truncate me-2">{{ $sub->form->title ?? '-' }}</strong>
-                                        @php
-                                        $flagged = $sub->answers->where('is_flagged', true)->count();
-                                        @endphp
-                                        @if($flagged > 0)
-                                        <span class="badge bg-danger">
-                                            <i class="fas fa-exclamation-circle me-1"></i>Ada Masalah
-                                        </span>
-                                        @else
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check me-1"></i>Lengkap
-                                        </span>
-                                        @endif
-                                    </div>
-                                    <div class="small text-muted mb-1">
-                                        <i class="fas fa-user me-1"></i>{{ $sub->submitter->name ?? '-' }}
-                                    </div>
-                                    <div class="small text-muted">
-                                        <i class="fas fa-calendar me-1"></i>{{ $sub->submission_date?->isoFormat('D MMM Y') }}
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="d-none d-md-table-row">
-                                <td class="fw-semibold">{{ $sub->form->title ?? '-' }}</td>
-                                <td>{{ $sub->submitter->name ?? '-' }}</td>
-                                <td>{{ $sub->submission_date?->isoFormat('D MMM Y') }}</td>
-                                <td>
-                                    @php
-                                    $flagged = $sub->answers->where('is_flagged', true)->count();
-                                    @endphp
-                                    @if($flagged > 0)
-                                    <span class="badge bg-danger">
-                                        <i class="fas fa-exclamation-circle me-1"></i>Ada Masalah
-                                    </span>
-                                    @else
-                                    <span class="badge bg-success">
-                                        <i class="fas fa-check me-1"></i>Lengkap
-                                    </span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
-                                    <div>Belum ada submission</div>
-                                </td>
-                            </tr>
-                            @endforelse
+                            <?php $recentSubmissionItems = $recentSubmissions ?? []; ?>
+                            <?php if (count($recentSubmissionItems) > 0): ?>
+                                <?php foreach ($recentSubmissionItems as $sub): ?>
+                                    <?php $flagged = $sub->answers->where('is_flagged', true)->count(); ?>
+                                    <tr>
+                                        <td class="fw-semibold">{{ $sub->form->title ?? '-' }}</td>
+                                        <td>{{ $sub->submitter->name ?? '-' }}</td>
+                                        <td>{{ $sub->submission_date?->isoFormat('D MMM Y') }}</td>
+                                        <td>
+                                            <?php if ($flagged > 0): ?>
+                                                <span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i>Ada Masalah</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Lengkap</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                                        <div>Belum ada submission</div>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -294,21 +337,222 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
 {{-- Siapkan data PHP sebelum script --}}
-@php
-$okCount = ($totalSubmissions ?? 0) - ($issuesToday ?? 0);
-$issueCount = $issuesToday ?? 0;
-@endphp
-
 <script>
+(() => {
+    let isPageVisible = true;
+    let isUserIdle = false;
+    let idleTimeout;
+    let metricsInFlight = false;
+    let monitorInFlight = false;
+    const pollIntervalMs = 5000;
+
+    document.addEventListener('visibilitychange', () => {
+        isPageVisible = !document.hidden;
+        if (isPageVisible) {
+            refreshActivityMonitor();
+            refreshMetrics();
+        }
+    });
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimeout);
+        isUserIdle = false;
+        idleTimeout = setTimeout(() => {
+            isUserIdle = true;
+        }, 120000);
+    }
+
+    document.addEventListener('mousemove', resetIdleTimer);
+    document.addEventListener('keydown', resetIdleTimer);
+    document.addEventListener('click', resetIdleTimer);
+    resetIdleTimer();
+
+    const monitorBody = document.getElementById('activity-monitor-body');
+    const monitorStatus = document.getElementById('activity-monitor-status');
+    const monitorEndpoint = @json(route('admin.activity-monitor'));
+    const cardDetailsEndpoint = @json(route('admin.dashboard.card-details', ['card' => '__CARD__']));
+    let knownActivityIds = new Set([...monitorBody.querySelectorAll('[data-activity-id]')].map(row => row.dataset.activityId));
+
+    const escapeMonitorValue = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&', '<': '<', '>': '>', "'": '&#039;', '"': '"' }[character]));
+    const monitorStatusLabel = status => ({ submitted: 'Submitted', completed: 'Selesai', in_progress: 'Progress', pending: 'Pending', blocked: 'Terhambat' }[status] || status);
+
+    async function refreshActivityMonitor() {
+        if (!isPageVisible) return;
+        if (monitorInFlight) return;
+        try {
+            monitorInFlight = true;
+            const response = await fetch(monitorEndpoint, {
+                cache: 'no-store',
+                headers: { Accept: 'application/json' },
+            });
+            if (!response.ok) return;
+            const items = (await response.json()).data;
+            const newIds = new Set(items.map(item => item.id));
+            const hasNew = items.some(item => !knownActivityIds.has(item.id));
+            monitorBody.innerHTML = items.length ? items.map(item => {
+                const status = item.status === 'completed'
+                    ? 'chip-status-done'
+                    : (item.status === 'in_progress' || item.status === 'pending')
+                        ? 'chip-status-pending'
+                        : 'chip-status-archived';
+
+                return `<tr data-activity-id="${escapeMonitorValue(item.id)}"${!knownActivityIds.has(item.id) ? ' class="table-success"' : ''}><td class="fw-semibold">${escapeMonitorValue(item.user)}</td><td>${escapeMonitorValue(item.activity)}</td><td><span class="badge text-bg-info">${escapeMonitorValue(item.type)}</span></td><td><span class="chip ${status}"><span class="chip-buffering-label">${escapeMonitorValue(monitorStatusLabel(item.status))}</span></span></td><td>${escapeMonitorValue(item.updated_label)}</td></tr>`;
+            }).join('') : '<tr><td colspan="5" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>';
+            knownActivityIds = newIds;
+            monitorStatus.textContent = hasNew ? 'Ada pembaruan baru' : 'Diperbarui baru saja';
+            monitorStatus.className = `badge ${hasNew ? 'text-bg-success' : 'text-bg-light'}`;
+            if (hasNew) setTimeout(() => monitorBody.querySelectorAll('.table-success').forEach(row => row.classList.remove('table-success')), 2500);
+        } catch (error) {
+            monitorStatus.textContent = 'Monitoring offline';
+            monitorStatus.className = 'badge text-bg-warning';
+        } finally {
+            monitorInFlight = false;
+        }
+    }
+
+    refreshActivityMonitor();
+    window.setInterval(refreshActivityMonitor, pollIntervalMs);
+
+    // Poll and update dashboard metrics
+    const metricsEndpoint = @json(route('admin.dashboard.metrics'));
+    async function refreshMetrics() {
+        if (!isPageVisible || isUserIdle) return;
+        if (metricsInFlight) return;
+        try {
+            metricsInFlight = true;
+            const response = await fetch(metricsEndpoint, { headers: { Accept: 'application/json' } });
+            if (!response.ok) return;
+            const metrics = await response.json();
+
+            document.querySelectorAll('[data-metric]').forEach(el => {
+                const metricKey = el.dataset.metric;
+                if (metrics[metricKey] !== undefined) {
+                    const oldValue = el.textContent;
+                    const newValue = metrics[metricKey];
+                    if (oldValue !== String(newValue)) {
+                        el.textContent = newValue;
+                        el.parentElement.style.transition = 'background-color 0.3s ease';
+                        el.parentElement.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                        setTimeout(() => {
+                            el.parentElement.style.backgroundColor = 'transparent';
+                        }, 500);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Failed to refresh metrics:', error);
+        } finally {
+            metricsInFlight = false;
+        }
+    }
+
+    refreshMetrics();
+    window.setInterval(refreshMetrics, pollIntervalMs);
+
+    const detailModalElement = document.getElementById('dashboard-detail-modal');
+    let detailModalBackdrop;
+
+    function showDetailModal() {
+        detailModalElement.style.display = 'block';
+        detailModalElement.removeAttribute('aria-hidden');
+        detailModalElement.setAttribute('aria-modal', 'true');
+        detailModalElement.classList.add('show');
+        document.body.classList.add('modal-open');
+
+        detailModalBackdrop = document.createElement('div');
+        detailModalBackdrop.className = 'modal-backdrop fade show';
+        detailModalBackdrop.addEventListener('click', hideDetailModal);
+        document.body.appendChild(detailModalBackdrop);
+    }
+
+    function hideDetailModal() {
+        detailModalElement.classList.remove('show');
+        detailModalElement.style.display = 'none';
+        detailModalElement.setAttribute('aria-hidden', 'true');
+        detailModalElement.removeAttribute('aria-modal');
+        document.body.classList.remove('modal-open');
+        detailModalBackdrop?.remove();
+        detailModalBackdrop = null;
+    }
+
+    detailModalElement.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
+        button.addEventListener('click', hideDetailModal);
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && detailModalElement.classList.contains('show')) {
+            hideDetailModal();
+        }
+    });
+    const detailTitle = document.getElementById('dashboard-detail-title');
+    const detailSummary = document.getElementById('dashboard-detail-summary');
+    const detailContent = document.getElementById('dashboard-detail-content');
+    const detailStatusLabel = status => ({
+        submitted: 'Disubmit',
+        completed: 'Selesai',
+        in_progress: 'Progress',
+        pending: 'Pending',
+        blocked: 'Terhambat',
+        issue: 'Ada issue',
+    }[status] || status);
+    const detailStatusClass = status => ({
+        submitted: 'text-bg-success',
+        completed: 'text-bg-success',
+        in_progress: 'text-bg-warning',
+        pending: 'text-bg-secondary',
+        blocked: 'text-bg-danger',
+        issue: 'text-bg-danger',
+    }[status] || 'text-bg-secondary');
+
+    function renderDetailLoading() {
+        detailTitle.textContent = 'Memuat detail';
+        detailSummary.textContent = '';
+        detailContent.innerHTML = '<div class="d-flex justify-content-center align-items-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Memuat...</span></div></div>';
+    }
+
+    function renderDetailRows(detail) {
+        detailTitle.textContent = detail.title;
+        detailSummary.textContent = detail.summary;
+        if (!detail.rows.length) {
+            detailContent.innerHTML = '<div class="text-center text-muted py-5">Tidak ada data untuk ditampilkan.</div>';
+            return;
+        }
+
+        const headers = detail.columns.map(column => `<th>${escapeMonitorValue(column)}</th>`).join('');
+        const rows = detail.rows.map(row => `<tr><td class="fw-semibold">${escapeMonitorValue(row.user)}</td><td>${escapeMonitorValue(row.item)}</td><td><span class="badge ${detailStatusClass(row.status)}">${escapeMonitorValue(detailStatusLabel(row.status))}</span></td><td>${escapeMonitorValue(row.updated_label)}</td></tr>`).join('');
+        detailContent.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+    document.querySelectorAll('.dashboard-detail-trigger').forEach(trigger => {
+        trigger.addEventListener('click', async () => {
+            renderDetailLoading();
+            showDetailModal();
+            try {
+                const endpoint = cardDetailsEndpoint.replace('__CARD__', encodeURIComponent(trigger.dataset.cardDetail));
+                const response = await fetch(endpoint, { cache: 'no-store', headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Failed to load card details');
+                renderDetailRows(await response.json());
+            } catch (error) {
+                detailTitle.textContent = 'Detail tidak tersedia';
+                detailSummary.textContent = '';
+                detailContent.innerHTML = '<div class="text-center text-muted py-5">Data detail tidak dapat dimuat. Silakan coba lagi.</div>';
+            }
+        });
+    });
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     // Data dari PHP
     const dailyLabels = {!! json_encode($dailyLabels ?? []) !!};
     const dailySubmissionsData = {!! json_encode($dailySubmissionsData ?? []) !!};
+    const trendLabels = {!! json_encode($trendLabels ?? []) !!};
+    const dailyActivityTrendData = {!! json_encode($dailyActivityTrendData ?? []) !!};
     const weeklyData = {!! json_encode($weeklyComplianceData ?? [0, 0, 0, 0]) !!};
     const formUsageData = {!! json_encode($formUsageData ?? []) !!};
     const userActivityData = {!! json_encode($userActivityData ?? []) !!};
     const issuesByFormData = {!! json_encode($issuesByFormData ?? []) !!};
-    const statusData = {!! json_encode($statusData ?? ['ok' => 0, 'issues' => 0]) !!};
+    const dailyTaskByUserData = {!! json_encode($dailyTaskByUserData ?? []) !!};
+    const statusData = {!! json_encode($statusData ?? ['submit' => ['completed' => 0, 'pending' => 0], 'daily' => ['completed' => 0, 'in_progress' => 0, 'blocked' => 0]]) !!};
 
     let submissionsTrendChart;
     let currentChartType = 'line';
@@ -398,8 +642,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const datasets = [{
-            label: 'Submissions',
-            data: dailySubmissionsData,
+            label: 'Daily Activity',
+            data: dailyActivityTrendData,
             borderColor: '#2d5a8e',
             backgroundColor: currentChartType === 'area' ? 'rgba(45, 90, 142, 0.1)' : '#2d5a8e',
             fill: currentChartType === 'area',
@@ -411,7 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submissionsTrendChart = new Chart(ctx, {
             type: currentChartType === 'area' ? 'line' : currentChartType,
             data: {
-                labels: dailyLabels,
+                labels: trendLabels,
                 datasets: datasets
             },
             options: {
@@ -420,6 +664,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     ...chartConfig.plugins,
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        ...chartConfig.plugins.tooltip,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label;
+                            },
+                            label: function(context) {
+                                return 'Daily Activity: ' + context.parsed.y;
+                            }
+                        }
                     }
                 }
             }
@@ -429,13 +684,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Status Pie Chart
     function initStatusPieChart() {
         const ctx = document.getElementById('statusPieChart');
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) existingChart.destroy();
+
+        const labels = dailyTaskByUserData.map(item => item.label);
+        const values = dailyTaskByUserData.map(item => item.value);
+
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['OK', 'Bermasalah'],
+                labels: labels.length ? labels : ['Belum ada data'],
                 datasets: [{
-                    data: [statusData.ok, statusData.issues],
-                    backgroundColor: ['#198754', '#dc3545'],
+                    data: values.length ? values : [0],
+                    backgroundColor: ['#198754', '#0d6efd', '#6f42c1', '#f59e0b', '#dc3545'],
                     borderWidth: 2,
                     borderColor: '#fff',
                     hoverBorderWidth: 3
@@ -456,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         callbacks: {
                             label: function(context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                const percentage = total ? ((context.parsed / total) * 100).toFixed(1) : 0;
                                 return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
                             }
                         }
@@ -728,6 +989,32 @@ document.addEventListener('DOMContentLoaded', function() {
     height: auto !important;
 }
 
+/* Tampilkan sekitar 8 aktivitas terbaru; aktivitas lain tetap dapat diakses dengan scroll. */
+.activity-monitor-scroll {
+    max-height: 345px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+.activity-monitor-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-monitor-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.activity-monitor-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+}
+
+.activity-monitor-scroll thead th {
+    z-index: 1;
+    box-shadow: inset 0 -1px 0 var(--bs-border-color);
+}
+
 .btn-group .btn.active {
     background-color: #0d6efd;
     border-color: #0d6efd;
@@ -783,6 +1070,10 @@ document.addEventListener('DOMContentLoaded', function() {
     /* Mobile table styles */
     .table-responsive {
         border: none;
+    }
+
+    .activity-monitor-scroll {
+        max-height: 320px;
     }
 
     .table-responsive .table {

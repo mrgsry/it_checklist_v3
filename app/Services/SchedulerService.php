@@ -2,44 +2,51 @@
 
 namespace App\Services;
 
-use App\Models\ChecklistForm;
 use App\Models\FormAssignment;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class SchedulerService
 {
     /**
      * Get forms that are due today for a specific user
      */
-    public function getFormsDueToday($user)
+    public function getFormsDueToday($user, ?Collection $assignments = null)
     {
-        $today = Carbon::today();
-        $dayName = $today->format('D'); // Mon, Tue, Wed, Thu, Fri, Sat, Sun
-        
+        return $this->getFormsDueOnDate($user, Carbon::today(), $assignments);
+    }
+
+    /**
+     * Get active forms assigned to a user that are due on a date.
+     */
+    public function getFormsDueOnDate($user, Carbon $date, ?Collection $assignments = null): array
+    {
+        $dayName = $date->format('D');
+
         // Get user's form assignments
-        $assignments = FormAssignment::where('user_id', $user->id)
+        $assignments ??= FormAssignment::where('user_id', $user->id)
             ->with('form')
             ->get();
-        
+
         $formsDue = [];
-        
+
         foreach ($assignments as $assignment) {
             $form = $assignment->form;
-            
-            if (!$form || !$form->is_active) {
+
+            if (! $form || ! $form->is_active) {
                 continue;
             }
-            
-            $isDue = $this->isFormDueOnDate($form, $today, $dayName);
-            
+
+            $isDue = $this->isFormDueOnDate($form, $date, $dayName);
+
             if ($isDue) {
                 $formsDue[] = $form;
             }
         }
-        
+
         return $formsDue;
     }
-    
+
     /**
      * Check if a form is due on a specific date
      */
@@ -49,36 +56,39 @@ class SchedulerService
         if ($form->start_date && $date->lt(Carbon::parse($form->start_date))) {
             return false;
         }
-        
+
         if ($form->end_date && $date->gt(Carbon::parse($form->end_date))) {
             return false;
         }
-        
+
         // Check schedule type
         switch ($form->schedule_type) {
             case 'daily':
                 return true;
-                
+
             case 'weekly':
-                $scheduleDays = is_array($form->schedule_days) 
-                    ? $form->schedule_days 
+                $scheduleDays = is_array($form->schedule_days)
+                    ? $form->schedule_days
                     : json_decode($form->schedule_days, true);
+
                 return in_array($dayName, $scheduleDays ?? []);
-                
+
             case 'custom':
                 // Custom interval logic
                 if ($form->start_date) {
                     $startDate = Carbon::parse($form->start_date);
                     $interval = $form->schedule_interval ?? 1;
+
                     return $date->diffInDays($startDate) % $interval === 0;
                 }
+
                 return false;
-                
+
             default:
                 return false;
         }
     }
-    
+
     /**
      * Get forms due in a date range
      */
@@ -86,21 +96,20 @@ class SchedulerService
     {
         $formsDue = [];
         $currentDate = $startDate->copy();
-        
+
         while ($currentDate->lte($endDate)) {
-            $dayOfWeek = $currentDate->dayOfWeek;
-            $formsForDay = $this->getFormsDueToday($user);
-            
+            $formsForDay = $this->getFormsDueOnDate($user, $currentDate);
+
             foreach ($formsForDay as $form) {
                 $formsDue[] = [
                     'form' => $form,
                     'date' => $currentDate->copy(),
                 ];
             }
-            
+
             $currentDate->addDay();
         }
-        
+
         return $formsDue;
     }
 }

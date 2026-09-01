@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="174" viewBox="0 0 500 174">
+  <defs><linearGradient id="mark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b8ed4"/><stop offset="0.55" stop-color="#439bd0"/><stop offset="1" stop-color="#6840a3"/></linearGradient></defs>
+  <path fill="url(#mark)" d="M0 22C0 10 10 0 22 0h126c12 0 22 10 22 22v126c0 12-10 22-22 22h-42v-49l32-32c7-7 7-17 0-24s-17-7-24 0l-49 49-31-18c-8-5-11-15-6-23l31-31c6-7 6-17-1-24s-17-7-24 0L0 87z"/>
+  <path fill="#050505" d="M190 0h48v119h58V0h48v119h58V0h48v159h-48v-1H238v1h-48z"/>
+  <path fill="#050505" d="M190 174V147h310v27z"/>
+</svg>

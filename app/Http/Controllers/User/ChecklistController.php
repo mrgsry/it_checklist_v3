@@ -3,24 +3,32 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Services\SchedulerService;
-use App\Services\AnomalyDetectionService;
 use App\Models\ChecklistForm;
 use App\Models\ChecklistSubmission;
+use App\Models\DailyActivity;
 use App\Models\SubmissionAnswer;
+use App\Services\AnomalyDetectionService;
+use App\Services\ChecklistPhotoCompressor;
+use App\Services\SchedulerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class ChecklistController extends Controller
 {
     public function index()
     {
-        $user     = Auth::user();
+        $user = Auth::user();
         $formsDue = app(SchedulerService::class)->getFormsDueToday($user);
+        $submittedFormIds = ChecklistSubmission::query()
+            ->where('submitted_by', $user->id)
+            ->whereDate('submission_date', Carbon::today())
+            ->where('status', 'submitted')
+            ->pluck('form_id');
 
-        return view('user.checklist.index', compact('formsDue'));
+        return view('user.checklist.index', compact('formsDue', 'submittedFormIds'));
     }
 
     public function fill(int $formId)
@@ -30,7 +38,7 @@ class ChecklistController extends Controller
 
         // Pastikan user di-assign ke form ini
         $isAssigned = $form->assignedUsers->contains($user->id);
-        if (!$isAssigned) {
+        if (! $isAssigned) {
             abort(403, 'Anda tidak ditugaskan pada form ini.');
         }
 
@@ -54,23 +62,28 @@ class ChecklistController extends Controller
         $user = Auth::user();
         $form = ChecklistForm::with('items')->findOrFail($formId);
 
+        // Pastikan request POST tidak dapat melewati pengecekan akses dari halaman form.
+        if (! $form->assignedUsers()->whereKey($user->id)->exists()) {
+            abort(403, 'Anda tidak ditugaskan pada form ini.');
+        }
+
         // Validasi required fields
         $rules = [];
         foreach ($form->items as $item) {
             if ($item->field_type === 'photo') {
-                $rules["answers.{$item->id}"] = $item->is_required ? 'required|image|mimes:jpg,jpeg,png|max:5120' : 'nullable|image|mimes:jpg,jpeg,png|max:5120';
+                $rules["answers.{$item->id}"] = $item->is_required ? 'required|array|min:1|max:5' : 'nullable|array|max:5';
+                $rules["answers.{$item->id}.*"] = 'image|mimes:jpg,jpeg,png|max:5120';
             } elseif ($item->is_required) {
                 $rules["answers.{$item->id}"] = 'required';
             }
         }
 
-        if (!empty($rules)) {
+        if (! empty($rules)) {
             $request->validate(
                 $rules,
                 [],
                 collect($form->items)->mapWithKeys(
-                    fn($item) =>
-                    ["answers.{$item->id}" => $item->label]
+                    fn ($item) => ["answers.{$item->id}" => $item->label]
                 )->toArray()
             );
         }
@@ -87,39 +100,51 @@ class ChecklistController extends Controller
                 ->with('error', 'Checklist ini sudah pernah disubmit hari ini.');
         }
 
-        // Buat submission
-        $submission = ChecklistSubmission::create([
-            'form_id'         => $formId,
-            'submitted_by'    => $user->id,
-            'submission_date' => Carbon::today(),
-            'submitted_at'    => now(),
-            'notes'           => $request->notes,
-            'status'          => 'submitted',
-        ]);
+        $storedPaths = [];
+        $submission = null;
 
-        // Simpan jawaban
-        $answers = $request->input('answers', []);
-        foreach ($form->items as $item) {
-            if ($item->field_type === 'photo') {
-                $file = $request->file("answers.{$item->id}");
-                $value = null;
-                if ($file && $file->isValid()) {
-                    $path = $file->store('checklist-photos', 'public');
-                    $value = $path;
-                }
-            } else {
-                $value = $answers[$item->id] ?? null;
-                if (is_array($value)) {
-                    $value = implode(', ', $value);
-                }
-            }
-
-            SubmissionAnswer::create([
-                'submission_id' => $submission->id,
-                'form_item_id'  => $item->id,
-                'answer_value'  => $value,
-                'is_flagged'    => false,
+        try {
+            // Buat submission
+            $submission = ChecklistSubmission::create([
+                'form_id' => $formId,
+                'submitted_by' => $user->id,
+                'submission_date' => Carbon::today(),
+                'submitted_at' => now(),
+                'notes' => $request->notes,
+                'status' => 'submitted',
             ]);
+
+            // Simpan jawaban
+            $answers = $request->input('answers', []);
+            foreach ($form->items as $item) {
+                if ($item->field_type === 'photo') {
+                    $paths = [];
+                    foreach ($request->file("answers.{$item->id}", []) as $file) {
+                        if ($file->isValid()) {
+                            $path = app(ChecklistPhotoCompressor::class)->store($file);
+                            $paths[] = $path;
+                            $storedPaths[] = $path;
+                        }
+                    }
+                    $value = $paths === [] ? null : json_encode($paths, JSON_THROW_ON_ERROR);
+                } else {
+                    $value = $answers[$item->id] ?? null;
+                    if (is_array($value)) {
+                        $value = implode(', ', $value);
+                    }
+                }
+
+                SubmissionAnswer::create([
+                    'submission_id' => $submission->id,
+                    'form_item_id' => $item->id,
+                    'answer_value' => $value,
+                    'is_flagged' => false,
+                ]);
+            }
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($storedPaths);
+            $submission?->delete();
+            throw $exception;
         }
 
         // Deteksi anomali
@@ -133,11 +158,17 @@ class ChecklistController extends Controller
     {
         $user = Auth::user();
 
+        $dailyActivities = DailyActivity::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('activity_date')
+            ->latest()
+            ->paginate(15, ['*'], 'daily_page');
+
         $submissions = ChecklistSubmission::where('submitted_by', $user->id)
             ->with(['form', 'answers.formItem'])
             ->orderBy('submitted_at', 'desc')
-            ->paginate(15);
+            ->paginate(15, ['*'], 'submission_page');
 
-        return view('user.checklist.history', compact('submissions'));
+        return view('user.checklist.history', compact('dailyActivities', 'submissions'));
     }
 }

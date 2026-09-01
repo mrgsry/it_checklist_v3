@@ -39,6 +39,11 @@ class User extends Authenticatable
         return $this->hasMany(ChecklistSubmission::class, 'submitted_by');
     }
 
+    public function dailyActivities()
+    {
+        return $this->hasMany(DailyActivity::class);
+    }
+
     // Helper role
     public function isAdmin(): bool
     {
