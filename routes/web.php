@@ -50,13 +50,24 @@ Route::prefix('admin')
         Route::get('reports/export-excel', [Admin\ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
         // Daily Activity Monitoring
-         Route::get('daily-activities', [Admin\DailyActivityController::class, 'index'])->name('daily-activities.index');
-         Route::post('daily-activities', [Admin\DailyActivityController::class, 'store'])->name('daily-activities.store');
-         Route::get('daily-activities/export-pdf', [Admin\DailyActivityController::class, 'exportPdf'])->name('daily-activities.export-pdf');
-         Route::get('daily-activities/export-excel', [Admin\DailyActivityController::class, 'exportExcel'])->name('daily-activities.export-excel');
-         Route::get('activity-monitor', [Admin\DashboardController::class, 'activityMonitor'])->name('activity-monitor');
-         Route::get('dashboard/metrics', [Admin\DashboardController::class, 'dashboardMetrics'])->name('dashboard.metrics');
-         Route::get('dashboard/card-details/{card}', [Admin\DashboardController::class, 'cardDetails'])->name('dashboard.card-details');
+        Route::get('daily-activities', [Admin\DailyActivityController::class, 'index'])->name('daily-activities.index');
+        Route::post('daily-activities', [Admin\DailyActivityController::class, 'store'])->name('daily-activities.store');
+        Route::get('daily-activities/export-pdf', [Admin\DailyActivityController::class, 'exportPdf'])->name('daily-activities.export-pdf');
+        Route::get('daily-activities/export-excel', [Admin\DailyActivityController::class, 'exportExcel'])->name('daily-activities.export-excel');
+        Route::get('activity-monitor', [Admin\DashboardController::class, 'activityMonitor'])->name('activity-monitor');
+        Route::get('dashboard/metrics', [Admin\DashboardController::class, 'dashboardMetrics'])->name('dashboard.metrics');
+        Route::get('dashboard/card-details/{card}', [Admin\DashboardController::class, 'cardDetails'])->name('dashboard.card-details');
+
+        // Asset Management
+        Route::get('assets/export-pdf', [Admin\AssetController::class, 'exportPdf'])->name('assets.export-pdf');
+        Route::get('assets/export-excel', [Admin\AssetController::class, 'exportExcel'])->name('assets.export-excel');
+        Route::resource('assets', Admin\AssetController::class);
+        Route::middleware('role:superadmin')->group(function () {
+            Route::get('asset-categories', [Admin\AssetCategoryController::class, 'index'])->name('asset-categories.index');
+            Route::post('asset-categories', [Admin\AssetCategoryController::class, 'store'])->name('asset-categories.store');
+            Route::put('asset-categories/{assetCategory}', [Admin\AssetCategoryController::class, 'update'])->name('asset-categories.update');
+            Route::delete('asset-categories/{assetCategory}', [Admin\AssetCategoryController::class, 'destroy'])->name('asset-categories.destroy');
+        });
 
         // Memo Maker
         Route::get('memo-maker', [Admin\MemoMakerController::class, 'index'])->name('memo-maker.index');

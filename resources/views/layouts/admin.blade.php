@@ -96,6 +96,12 @@
                         <i class="fas fa-clipboard-list"></i><span class="sidebar-link-text">Daily Activity</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.assets.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.assets.*') ? 'active' : '' }}" data-sidebar-label="Asset">
+                        <i class="fas fa-boxes-stacked"></i><span class="sidebar-link-text">Asset</span>
+                    </a>
+                </li>
                 @php($documentMakerActive = request()->routeIs('admin.memo-maker.*', 'admin.berita-acara-maker.*', 'admin.instruksi-kerja-maker.*'))
                 <li class="nav-item">
                     <button id="document-maker-toggle" class="nav-link document-maker-heading w-100 border-0 bg-transparent text-start {{ $documentMakerActive ? 'active' : '' }}" type="button" aria-expanded="{{ $documentMakerActive ? 'true' : 'false' }}" aria-controls="document-maker-menu" data-sidebar-label="Document Maker">
@@ -188,6 +194,12 @@
                     <a href="{{ route('admin.daily-activities.index') }}"
                         class="nav-link {{ request()->routeIs('admin.daily-activities.*') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> Daily Activity
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.assets.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.assets.*') ? 'active' : '' }}">
+                        <i class="fas fa-boxes-stacked"></i> Asset
                     </a>
                 </li>
                 <li class="nav-item">
