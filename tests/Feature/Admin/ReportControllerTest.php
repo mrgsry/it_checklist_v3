@@ -44,6 +44,18 @@ class ReportControllerTest extends TestCase
             ->assertJsonMissingPath('summaryStats.total');
     }
 
+    public function test_report_polling_limits_daily_activity_data_to_fifteen_items_per_page(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'user']);
+        DailyActivity::factory()->count(16)->for($user)->create();
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.reports.data'))
+            ->assertOk()
+            ->assertJsonCount(15, 'dailyActivities');
+    }
+
     public function test_admin_can_export_filtered_report_to_excel(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -66,5 +78,16 @@ class ReportControllerTest extends TestCase
             ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
             ->assertSee('Aktivitas terpilih')
             ->assertDontSee('Aktivitas lain');
+    }
+
+    public function test_report_search_and_pagination_are_applied_to_submission_detail(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.reports.index', ['search' => 'backup', 'page' => 2]))
+            ->assertOk()
+            ->assertSee('Cari Kata Kunci')
+            ->assertSee('tampil 15 data per halaman');
     }
 }

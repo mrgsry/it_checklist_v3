@@ -85,11 +85,12 @@
         </div>
         <div class="table-responsive activity-monitor-scroll">
             <table class="table table-sm table-hover align-middle mb-0">
-                <thead class="sticky-top bg-white"><tr><th>User</th><th>Aktivitas Terakhir</th><th>Jenis</th><th>Kategori</th><th>Status</th><th>Waktu Pembaruan</th></tr></thead>
+                <thead class="sticky-top bg-white"><tr><th>User</th><th>User Request</th><th>Aktivitas Terakhir</th><th>Jenis</th><th>Kategori</th><th>Status</th><th>Waktu Pembaruan</th></tr></thead>
                 <tbody id="activity-monitor-body">
                 @forelse($activityFeed as $item)
                     <tr data-activity-id="{{ $item['id'] }}">
                         <td class="fw-semibold">{{ $item['user'] }}</td>
+                        <td>{{ $item['user_request'] ?? '-' }}</td>
                         <td>{{ $item['activity'] }}</td>
                         <td><span class="badge text-bg-info">{{ $item['type'] }}</span></td>
                         <td>{{ $item['category'] ?? '-' }}</td>
@@ -108,7 +109,7 @@
                         <td>@if($item['ticket_url'] ?? null)<a href="{{ $item['ticket_url'] }}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>@else{{ $item['updated_label'] }}@endif</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -397,8 +398,8 @@
                         ? 'chip-status-pending'
                         : 'chip-status-archived';
 
-                return `<tr data-activity-id="${escapeMonitorValue(item.id)}"${!knownActivityIds.has(item.id) ? ' class="table-success"' : ''}><td class="fw-semibold">${escapeMonitorValue(item.user)}</td><td>${escapeMonitorValue(item.activity)}</td><td><span class="badge text-bg-info">${escapeMonitorValue(item.type)}</span></td><td>${escapeMonitorValue(item.category || '-')}</td><td><span class="chip ${status}"><span class="chip-buffering-label">${escapeMonitorValue(monitorStatusLabel(item.status))}</span></span></td><td>${item.ticket_url ? `<a href="${escapeMonitorValue(item.ticket_url)}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>` : escapeMonitorValue(item.updated_label)}</td></tr>`;
-            }).join('') : '<tr><td colspan="5" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>';
+                return `<tr data-activity-id="${escapeMonitorValue(item.id)}"${!knownActivityIds.has(item.id) ? ' class="table-success"' : ''}><td class="fw-semibold">${escapeMonitorValue(item.user)}</td><td>${escapeMonitorValue(item.user_request || '-')}</td><td>${escapeMonitorValue(item.activity)}</td><td><span class="badge text-bg-info">${escapeMonitorValue(item.type)}</span></td><td>${escapeMonitorValue(item.category || '-')}</td><td><span class="chip ${status}"><span class="chip-buffering-label">${escapeMonitorValue(monitorStatusLabel(item.status))}</span></span></td><td>${item.ticket_url ? `<a href="${escapeMonitorValue(item.ticket_url)}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>` : escapeMonitorValue(item.updated_label)}</td></tr>`;
+            }).join('') : '<tr><td colspan="7" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>';
             knownActivityIds = newIds;
             monitorStatus.textContent = hasNew ? 'Ada pembaruan baru' : 'Diperbarui baru saja';
             monitorStatus.className = `badge ${hasNew ? 'text-bg-success' : 'text-bg-light'}`;
@@ -520,7 +521,7 @@
         }
 
         const headers = detail.columns.map(column => `<th>${escapeMonitorValue(column)}</th>`).join('');
-        const rows = detail.rows.map(row => `<tr><td class="fw-semibold">${escapeMonitorValue(row.user)}</td><td>${escapeMonitorValue(row.item)}</td><td><span class="badge ${detailStatusClass(row.status)}">${escapeMonitorValue(detailStatusLabel(row.status))}</span></td><td>${escapeMonitorValue(row.updated_label)}</td></tr>`).join('');
+        const rows = detail.rows.map(row => `<tr><td class="fw-semibold">${escapeMonitorValue(row.user)}</td>${Object.hasOwn(row, 'user_request') ? `<td>${escapeMonitorValue(row.user_request || '-')}</td>` : ''}<td>${escapeMonitorValue(row.item)}</td><td><span class="badge ${detailStatusClass(row.status)}">${escapeMonitorValue(detailStatusLabel(row.status))}</span></td><td>${escapeMonitorValue(row.updated_label)}</td></tr>`).join('');
         detailContent.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
     }
 

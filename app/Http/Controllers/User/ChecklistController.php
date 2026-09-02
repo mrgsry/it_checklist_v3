@@ -9,6 +9,7 @@ use App\Models\DailyActivity;
 use App\Models\SubmissionAnswer;
 use App\Services\AnomalyDetectionService;
 use App\Services\ChecklistPhotoCompressor;
+use App\Services\ChecklistSubmissionService;
 use App\Services\SchedulerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -182,5 +183,121 @@ class ChecklistController extends Controller
             ->paginate(15, ['*'], 'submission_page');
 
         return view('user.checklist.history', compact('dailyActivities', 'submissions'));
+    }
+
+    public function edit(ChecklistSubmission $submission)
+    {
+        $this->ensureOwner($submission);
+        $submission->load(['form.items', 'answers.formItem']);
+
+        return view('user.checklist.edit', compact('submission'));
+    }
+
+    public function update(Request $request, ChecklistSubmission $submission)
+    {
+        $this->ensureOwner($submission);
+        $this->updateSubmission($request, $submission);
+
+        return redirect()->route('user.history')->with('success', 'Submission berhasil diperbarui.');
+    }
+
+    public function updateSubmission(Request $request, ChecklistSubmission $submission): void
+    {
+        $submission->load(['form.items', 'answers']);
+        $form = $submission->form;
+        $rules = $this->answerRules($form, true, $submission);
+        $request->validate($rules, [], $this->answerAttributes($form));
+
+        $storedPaths = [];
+        $replacedPaths = [];
+        try {
+            foreach ($form->items as $item) {
+                $answer = $submission->answers->firstWhere('form_item_id', $item->id);
+                if ($item->field_type === 'photo') {
+                    $files = $request->file("answers.{$item->id}", []);
+                    if ($files === []) {
+                        continue;
+                    }
+
+                    $paths = [];
+                    foreach ($files as $file) {
+                        if ($file->isValid()) {
+                            $path = app(ChecklistPhotoCompressor::class)->store($file);
+                            $paths[] = $path;
+                            $storedPaths[] = $path;
+                        }
+                    }
+                    $replacedPaths = [...$replacedPaths, ...($answer?->photoPaths() ?? [])];
+                    $value = json_encode($paths, JSON_THROW_ON_ERROR);
+                } else {
+                    $value = $this->answerValue($request->input("answers.{$item->id}"), $item);
+                }
+
+                $submission->answers()->updateOrCreate(
+                    ['form_item_id' => $item->id],
+                    ['answer_value' => $value, 'is_flagged' => false]
+                );
+            }
+            $submission->update(['notes' => $request->input('notes')]);
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($storedPaths);
+            throw $exception;
+        }
+
+        Storage::disk('public')->delete(array_values(array_unique($replacedPaths)));
+
+        $submission->load('answers.formItem');
+        app(AnomalyDetectionService::class)->detectForSubmission($submission);
+
+    }
+
+    public function destroy(ChecklistSubmission $submission, ChecklistSubmissionService $submissionService)
+    {
+        $this->ensureOwner($submission);
+        $submissionService->delete($submission);
+
+        return redirect()->route('user.history')->with('success', 'Submission dihapus. Checklist dapat diisi ulang.');
+    }
+
+    private function ensureOwner(ChecklistSubmission $submission): void
+    {
+        abort_unless($submission->submitted_by === Auth::id(), 403);
+    }
+
+    private function answerRules(ChecklistForm $form, bool $editing = false, ?ChecklistSubmission $submission = null): array
+    {
+        $rules = ['notes' => ['nullable', 'string']];
+        foreach ($form->items as $item) {
+            if ($item->field_type === 'photo') {
+                $hasExistingPhoto = $editing && (($submission?->answers->firstWhere('form_item_id', $item->id)?->photoPaths()) ?? []) !== [];
+                $rules["answers.{$item->id}"] = $item->is_required && ! $hasExistingPhoto ? 'required|array|min:1|max:5' : 'nullable|array|max:5';
+                $rules["answers.{$item->id}.*"] = 'image|mimes:jpg,jpeg,png|max:5120';
+            } elseif ($item->field_type === 'checkbox') {
+                $rules["answers.{$item->id}"] = $item->is_required ? 'required|array' : 'nullable|array';
+                foreach ($item->options ?? [] as $index => $option) {
+                    $rules["answers.{$item->id}.{$index}"] = ($item->is_required ? 'required' : 'nullable').'|in:normal,tidak_normal';
+                }
+            } elseif ($item->is_required) {
+                $rules["answers.{$item->id}"] = 'required';
+            }
+        }
+
+        return $rules;
+    }
+
+    private function answerAttributes(ChecklistForm $form): array
+    {
+        return $form->items->mapWithKeys(fn ($item) => ["answers.{$item->id}" => $item->label])->all();
+    }
+
+    private function answerValue(mixed $value, $item): ?string
+    {
+        if ($item->field_type === 'checkbox' && is_array($value)) {
+            return json_encode(collect($item->options ?? [])->mapWithKeys(
+                fn (string $option, int $index) => [$option => $value[$index] ?? null]
+            )->filter()->all(), JSON_THROW_ON_ERROR);
+        }
+
+        return is_array($value) ? implode(', ', $value) : $value;
     }
 }

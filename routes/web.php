@@ -30,6 +30,9 @@ Route::prefix('admin')
 
         // Submissions
         Route::get('submissions', [Admin\SubmissionController::class, 'index'])->name('submissions.index');
+        Route::get('submissions/{submission}/edit', [Admin\SubmissionController::class, 'edit'])->name('submissions.edit');
+        Route::put('submissions/{submission}', [Admin\SubmissionController::class, 'update'])->name('submissions.update');
+        Route::delete('submissions/{submission}', [Admin\SubmissionController::class, 'destroy'])->name('submissions.destroy');
         Route::get('submissions/{submission}/export-pdf', [Admin\SubmissionController::class, 'exportPdf'])->name('submissions.export-pdf');
         Route::get('submissions/{submission}', [Admin\SubmissionController::class, 'show'])->name('submissions.show');
 
@@ -80,6 +83,9 @@ Route::prefix('user')
         Route::get('/checklist', [User\ChecklistController::class, 'index'])->name('checklist.index');
         Route::get('/checklist/{formId}/fill', [User\ChecklistController::class, 'fill'])->name('checklist.fill');
         Route::post('/checklist/{formId}/submit', [User\ChecklistController::class, 'submit'])->name('checklist.submit');
+        Route::get('/submissions/{submission}/edit', [User\ChecklistController::class, 'edit'])->name('submissions.edit');
+        Route::put('/submissions/{submission}', [User\ChecklistController::class, 'update'])->name('submissions.update');
+        Route::delete('/submissions/{submission}', [User\ChecklistController::class, 'destroy'])->name('submissions.destroy');
         Route::get('/history', [User\ChecklistController::class, 'history'])->name('history');
         Route::get('/daily-activities', [User\DailyActivityController::class, 'index'])->name('daily-activities.index');
         Route::post('/daily-activities', [User\DailyActivityController::class, 'store'])->name('daily-activities.store');

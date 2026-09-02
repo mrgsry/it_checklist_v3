@@ -17,7 +17,7 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        $data = $this->reportData($request);
+        $data = $this->reportData($request, true);
 
         return view('admin.reports.index', $data);
     }
@@ -47,7 +47,7 @@ class ReportController extends Controller
         return response()->json($this->buildStreamPayload($request));
     }
 
-    private function reportData(Request $request): array
+    private function reportData(Request $request, bool $paginateSubmissions = false): array
     {
         $this->validateFilters($request);
 
@@ -62,10 +62,26 @@ class ReportController extends Controller
             ->when($request->filled('user_id'), fn ($q) => $q->where('submitted_by', $request->integer('user_id')))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('submission_date', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('submission_date', '<=', $request->date_to))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $keyword = $request->string('search')->toString();
+
+                $q->where(function ($searchQuery) use ($keyword) {
+                    $searchQuery->whereHas('form', fn ($formQuery) => $formQuery->where('title', 'like', "%{$keyword}%"))
+                        ->orWhereHas('submitter', fn ($userQuery) => $userQuery->where('name', 'like', "%{$keyword}%"))
+                        ->orWhereHas('answers', fn ($answerQuery) => $answerQuery->where('answer_value', 'like', "%{$keyword}%"));
+                });
+            })
             ->limit(500); // Limit hasil untuk performance
 
-        $submissions = $query->orderByDesc('submission_date')->orderByDesc('submitted_at')->get();
-        $dailyActivities = $this->dailyActivitiesQuery($request)->get();
+        $orderedQuery = $query->orderByDesc('submission_date')->orderByDesc('submitted_at');
+        $allSubmissions = (clone $orderedQuery)->get();
+        $submissions = $paginateSubmissions
+            ? $orderedQuery->paginate(15)->withQueryString()
+            : $allSubmissions;
+        $allDailyActivities = (clone $this->dailyActivitiesQuery($request))->get();
+        $dailyActivities = $this->dailyActivitiesQuery($request)
+            ->paginate(15, ['*'], 'activity_page')
+            ->withQueryString();
         $selectedForm = $request->filled('form_id') ? $forms->firstWhere('id', $request->integer('form_id')) : null;
         $selectedUser = $request->filled('user_id') ? $users->firstWhere('id', $request->integer('user_id')) : null;
 
@@ -78,32 +94,34 @@ class ReportController extends Controller
             ? 'data:'.(mime_content_type($logoPath) ?: 'image/png').';base64,'.base64_encode((string) file_get_contents($logoPath))
             : null;
 
-        $flaggedSubmissions = $submissions->filter(fn ($submission) => $submission->answers->contains('is_flagged', true));
-        $answeredCount = $submissions->sum(fn ($submission) => $submission->answers->filter(fn ($answer) => filled($answer->answer_value))->count());
-        $expectedCount = $submissions->sum(fn ($submission) => $submission->form?->items->count() ?? 0);
+        $flaggedSubmissions = $allSubmissions->filter(fn ($submission) => $submission->answers->contains('is_flagged', true));
+        $answeredCount = $allSubmissions->sum(fn ($submission) => $submission->answers->filter(fn ($answer) => filled($answer->answer_value))->count());
+        $expectedCount = $allSubmissions->sum(fn ($submission) => $submission->form?->items->count() ?? 0);
 
         $summaryStats = [
-            'total' => $submissions->count(),
+            'total' => $allSubmissions->count(),
             'flagged' => $flaggedSubmissions->count(),
-            'clean' => $submissions->count() - $flaggedSubmissions->count(),
-            'flagged_rate' => $submissions->count() ? round($flaggedSubmissions->count() / $submissions->count() * 100, 1) : 0,
+            'clean' => $allSubmissions->count() - $flaggedSubmissions->count(),
+            'flagged_rate' => $allSubmissions->count() ? round($flaggedSubmissions->count() / $allSubmissions->count() * 100, 1) : 0,
             'answers' => $answeredCount,
             'expected_answers' => $expectedCount,
             'completion_rate' => $expectedCount ? round($answeredCount / $expectedCount * 100, 1) : 0,
             'flagged_answers' => $submissions->sum(fn ($submission) => $submission->answers->where('is_flagged', true)->count()),
-            ...$this->dailyActivitySummary($dailyActivities),
+            ...$this->dailyActivitySummary($allDailyActivities),
         ];
 
-        $formSummary = $submissions->groupBy('form_id')->map(fn (Collection $items) => $this->summarizeGroup($items));
-        $userSummary = $submissions->groupBy('submitted_by')->map(fn (Collection $items) => $this->summarizeGroup($items));
+        $formSummary = $allSubmissions->groupBy('form_id')->map(fn (Collection $items) => $this->summarizeGroup($items));
+        $userSummary = $allSubmissions->groupBy('submitted_by')->map(fn (Collection $items) => $this->summarizeGroup($items));
 
         return compact('forms', 'users', 'submissions', 'dailyActivities', 'selectedForm', 'selectedUser', 'reportPeriod', 'logoDataUri', 'summaryStats', 'formSummary', 'userSummary');
     }
 
     private function buildStreamPayload(Request $request): array
     {
-        $dailyActivities = $this->dailyActivitiesQuery($request)->get();
-        $summaryStats = $this->dailyActivitySummary($dailyActivities);
+        $allDailyActivities = (clone $this->dailyActivitiesQuery($request))->get();
+        $dailyActivities = $this->dailyActivitiesQuery($request)
+            ->paginate(15, ['*'], 'activity_page');
+        $summaryStats = $this->dailyActivitySummary($allDailyActivities);
 
         return [
             'summaryStats' => $summaryStats,
@@ -142,6 +160,16 @@ class ReportController extends Controller
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('activity_date', '<=', $request->date_to))
             ->when($request->filled('type'), fn ($q) => $q->ofType($request->type))
             ->when($request->filled('category'), fn ($q) => $q->where('category', $request->category))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $keyword = $request->string('search')->toString();
+
+                $q->where(function ($searchQuery) use ($keyword) {
+                    $searchQuery->where('activity', 'like', "%{$keyword}%")
+                        ->orWhere('category', 'like', "%{$keyword}%")
+                        ->orWhere('notes', 'like', "%{$keyword}%")
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$keyword}%"));
+                });
+            })
             ->orderByDesc('activity_date')->orderByDesc('updated_at')
             ->limit(300);
     }
@@ -166,6 +194,7 @@ class ReportController extends Controller
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'search' => ['nullable', 'string', 'max:255'],
             'type' => ['nullable', 'in:daily_activity,ticketing'],
             'category' => ['nullable', 'in:'.implode(',', DailyActivity::CATEGORIES)],
         ]);

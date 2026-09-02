@@ -62,6 +62,7 @@ class DailyActivityController extends Controller
         return $request->validate([
             'activity_date' => 'required|date|before_or_equal:today',
             'activity' => 'required|string|max:255',
+            'user_request' => 'nullable|string|max:255',
             'category' => ['nullable', 'in:'.implode(',', DailyActivity::CATEGORIES)],
             'status' => 'required|in:completed,in_progress,blocked',
             'notes' => 'nullable|string|max:2000',

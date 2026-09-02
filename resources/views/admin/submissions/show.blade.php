@@ -39,6 +39,12 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
+                        <a href="{{ route('admin.submissions.edit', $submission) }}" class="btn btn-sm btn-primary" title="Edit submission"><i class="fas fa-pen me-1"></i>Edit</a>
+                        <form method="POST" action="{{ route('admin.submissions.destroy', $submission) }}" onsubmit="return confirm('Hapus submission ini? Jawaban dan foto akan dihapus, tetapi histori aktivitas tetap tersimpan.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus submission"><i class="fas fa-trash me-1"></i>Hapus</button>
+                        </form>
                         @php
                         $problemList = collect();
                         foreach ($submission->answers as $answer) {

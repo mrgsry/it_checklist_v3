@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\User\ChecklistController as UserChecklistController;
 use App\Models\ChecklistSubmission;
 use App\Models\ChecklistForm;
 use App\Models\User;
+use App\Services\ChecklistSubmissionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -65,6 +67,32 @@ class SubmissionController extends Controller
     {
         $submission->load(['form.items', 'submitter', 'answers.formItem']);
         return view('admin.submissions.show', compact('submission'));
+    }
+
+    public function destroy(ChecklistSubmission $submission, ChecklistSubmissionService $submissionService)
+    {
+        $submissionService->delete($submission);
+
+        return redirect()->route('admin.submissions.index')->with('success', 'Submission berhasil dihapus.');
+    }
+
+    public function edit(ChecklistSubmission $submission)
+    {
+        $submission->load(['form.items', 'answers.formItem']);
+
+        return view('user.checklist.edit', [
+            'submission' => $submission,
+            'layout' => 'layouts.admin',
+            'backRoute' => route('admin.submissions.show', $submission),
+            'updateRoute' => route('admin.submissions.update', $submission),
+        ]);
+    }
+
+    public function update(Request $request, ChecklistSubmission $submission, UserChecklistController $checklistController)
+    {
+        $checklistController->updateSubmission($request, $submission);
+
+        return redirect()->route('admin.submissions.show', $submission)->with('success', 'Submission berhasil diperbarui.');
     }
 
     private function submissionData(Request $request): array

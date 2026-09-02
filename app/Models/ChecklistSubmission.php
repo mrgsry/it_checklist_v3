@@ -32,6 +32,11 @@ class ChecklistSubmission extends Model
         return $this->hasMany(SubmissionAnswer::class, 'submission_id');
     }
 
+    public function userRequests()
+    {
+        return $this->hasMany(UserRequest::class, 'submission_id');
+    }
+
     public function flaggedAnswers()
     {
         return $this->hasMany(SubmissionAnswer::class, 'submission_id')->where('is_flagged', true);

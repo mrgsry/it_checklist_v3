@@ -14,14 +14,16 @@ class DailyActivity extends Model
     public const TYPES = ['daily_activity', 'ticketing'];
 
     public const CATEGORIES = [
-        'App Request',
-        'Bug / Error',
-        'Feature Request',
-        'Network/System',
-        'Peripherals',
+        'Account & Identity (IAM)',
+        'Email & Collaboration',
+        'Hardware & Devices',
+        'Infrastructure & Server',
+        'IT Service Request (Non-Incident)',
+        'Network & Connectivity',
+        'Software & Application',
     ];
 
-    public const DEFAULT_CATEGORY = 'Bug / Error';
+    public const DEFAULT_CATEGORY = 'IT Service Request (Non-Incident)';
 
     protected $fillable = [
         'user_id',
@@ -34,6 +36,7 @@ class DailyActivity extends Model
         'status',
         'notes',
         'submission_id',
+        'user_request',
         'ticket_item',
         'ticket_number',
         'ticket_url',
@@ -75,6 +78,11 @@ class DailyActivity extends Model
     public function assigner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function submission(): BelongsTo
+    {
+        return $this->belongsTo(ChecklistSubmission::class, 'submission_id');
     }
 
     public function isAssigned(): bool

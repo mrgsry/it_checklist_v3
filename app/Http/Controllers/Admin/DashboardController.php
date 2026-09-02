@@ -415,7 +415,7 @@ class DashboardController extends Controller
     private function dailyCardDetails(Carbon $today): array
     {
         $activities = DailyActivity::query()
-            ->select(['id', 'user_id', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
+            ->select(['id', 'user_id', 'user_request', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
             ->with('user:id,name')
             ->whereDate('activity_date', $today)
             ->latest('updated_at')
@@ -423,6 +423,7 @@ class DashboardController extends Controller
             ->get()
             ->map(fn (DailyActivity $activity) => [
                 'user' => $activity->user?->name ?? '-',
+                'user_request' => $activity->user_request ?? '-',
                 'item' => $activity->activity,
                 'status' => $activity->status,
                 'updated_label' => $activity->updated_at?->format('d M Y, H:i') ?? '-',
@@ -431,7 +432,7 @@ class DashboardController extends Controller
         return [
             'title' => 'Detail Daily Activity Hari Ini',
             'summary' => sprintf('%d aktivitas tercatat hari ini.', $activities->count()),
-            'columns' => ['User', 'Aktivitas', 'Status', 'Pembaruan Terakhir'],
+            'columns' => ['User', 'User Request', 'Aktivitas', 'Status', 'Pembaruan Terakhir'],
             'rows' => $activities,
         ];
     }
@@ -513,14 +514,15 @@ class DashboardController extends Controller
     private function activityFeed()
     {
         $activities = DailyActivity::query()
-            ->select(['id', 'user_id', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
-            ->with(['user:id,name'])
+            ->select(['id', 'user_id', 'user_request', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
+            ->with('user:id,name')
             ->latest('updated_at')
             ->limit(15)
             ->get()
             ->map(fn ($activity) => [
                 'id' => 'daily-'.$activity->id,
                 'user' => $activity->user?->name ?? '-',
+                'user_request' => $activity->user_request ?? '-',
                 'activity' => $activity->activity,
                 'type' => $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity',
                 'category' => $activity->category,

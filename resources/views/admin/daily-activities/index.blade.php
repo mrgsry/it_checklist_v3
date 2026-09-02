@@ -12,6 +12,7 @@
             <div class="col-md-3"><label class="form-label" for="assign_user_id">User</label><select id="assign_user_id" name="user_id" class="form-select" required><option value="">Pilih user</option>@foreach($users as $user)<option value="{{ $user->id }}" @selected(old('user_id') == $user->id)>{{ $user->name }} ({{ $user->email }})</option>@endforeach</select></div>
             <div class="col-md-2"><label class="form-label" for="assign_date">Tanggal</label><input id="assign_date" type="date" name="activity_date" class="form-control" value="{{ old('activity_date', today()->toDateString()) }}" required></div>
             <div class="col-md-3"><label class="form-label" for="assign_activity">Aktivitas</label><input id="assign_activity" type="text" name="activity" class="form-control" value="{{ old('activity') }}" maxlength="255" required></div>
+            <div class="col-md-3"><label class="form-label" for="assign_user_request">User Request</label><input id="assign_user_request" type="text" name="user_request" class="form-control" value="{{ old('user_request') }}" maxlength="255"></div>
             <div class="col-md-2"><label class="form-label" for="assign_category">Kategori</label><select id="assign_category" name="category" class="form-select" required><option value="">Pilih kategori</option>@foreach(\App\Models\DailyActivity::CATEGORIES as $category)<option value="{{ $category }}" @selected(old('category') === $category)>{{ $category }}</option>@endforeach</select></div>
             <div class="col-md-3"><label class="form-label" for="assign_notes">Catatan</label><input id="assign_notes" type="text" name="notes" class="form-control" value="{{ old('notes') }}" maxlength="2000"></div>
             <div class="col-md-1 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" title="Simpan penugasan"><i class="fas fa-paper-plane"></i></button></div>
@@ -40,7 +41,7 @@
         </form>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead><tr><th>Tanggal</th><th>Staff</th><th>Jenis</th><th>Kategori</th><th>Aktivitas</th><th>Status</th><th>Catatan</th><th>Diperbarui</th><th class="text-end">Aksi</th></tr></thead>
+                <thead><tr><th>Tanggal</th><th>Staff</th><th>User Request</th><th>Jenis</th><th>Kategori</th><th>Aktivitas</th><th>Status</th><th>Catatan</th><th>Diperbarui</th><th class="text-end">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($activities as $activity)
                         @php($status = ['completed' => ['success', 'Selesai'], 'in_progress' => ['warning', 'Dalam Proses'], 'blocked' => ['danger', 'Terhambat']][$activity->status])
@@ -57,9 +58,9 @@
                             'Silakan perbarui status setelah pekerjaan selesai.',
                             'Terima kasih.',
                         ], fn ($line) => $line !== null)))
-                        <tr><td>{{ $activity->activity_date->isoFormat('D MMM Y') }}</td><td class="fw-semibold">{{ $activity->user->name }}</td><td>{{ $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity' }}</td><td>{{ $activity->category }}</td><td>{{ $activity->activity }} @if($activity->ticket_url)<a href="{{ $activity->ticket_url }}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>@endif</td><td><span class="badge text-bg-{{ $status[0] }}">{{ $status[1] }}</span></td><td class="text-muted">{{ $activity->notes ?: '-' }}</td><td>{{ $activity->updated_at->format('d M Y, H:i') }}</td><td class="text-end"><a href="https://wa.me/?text={{ rawurlencode($whatsAppMessage) }}" class="btn btn-sm btn-success" target="_blank" rel="noopener noreferrer" title="Kirim detail tugas ke WhatsApp" aria-label="Kirim detail tugas ke WhatsApp"><i class="fab fa-whatsapp"></i></a></td></tr>
+                        <tr><td>{{ $activity->activity_date->isoFormat('D MMM Y') }}</td><td class="fw-semibold">{{ $activity->user->name }}</td><td>{{ $activity->user_request ?? '-' }}</td><td>{{ $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity' }}</td><td>{{ $activity->category }}</td><td>{{ $activity->activity }} @if($activity->ticket_url)<a href="{{ $activity->ticket_url }}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>@endif</td><td><span class="badge text-bg-{{ $status[0] }}">{{ $status[1] }}</span></td><td class="text-muted">{{ $activity->notes ?: '-' }}</td><td>{{ $activity->updated_at->format('d M Y, H:i') }}</td><td class="text-end"><a href="https://wa.me/?text={{ rawurlencode($whatsAppMessage) }}" class="btn btn-sm btn-success" target="_blank" rel="noopener noreferrer" title="Kirim detail tugas ke WhatsApp" aria-label="Kirim detail tugas ke WhatsApp"><i class="fab fa-whatsapp"></i></a></td></tr>
                     @empty
-                        <tr><td colspan="9" class="text-center text-muted py-5"><i class="fas fa-clipboard-list d-block fa-2x mb-2"></i>Belum ada daily activity yang sesuai.</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted py-5"><i class="fas fa-clipboard-list d-block fa-2x mb-2"></i>Belum ada daily activity yang sesuai.</td></tr>
                     @endforelse
                 </tbody>
             </table>

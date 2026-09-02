@@ -96,10 +96,16 @@
                             @endif
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-outline-info" disabled
-                                title="Hanya Admin yang dapat melihat detail">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                            <div class="d-flex gap-1">
+                                <a href="{{ route('user.submissions.edit', $sub) }}" class="btn btn-sm btn-outline-primary" title="Edit submission">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <form method="POST" action="{{ route('user.submissions.destroy', $sub) }}" onsubmit="return confirm('Hapus submission ini? Jawaban dan foto akan dihapus, tetapi Daily Activity tetap tersimpan.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus submission"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach

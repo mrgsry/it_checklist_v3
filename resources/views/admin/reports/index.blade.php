@@ -39,6 +39,7 @@
             </div>
             <div class="col-md-2"><label for="filter_type" class="form-label small">Jenis</label><select id="filter_type" name="type" class="form-select"><option value="">Semua Jenis</option><option value="daily_activity" @selected(request('type') === 'daily_activity')>Daily Activity</option><option value="ticketing" @selected(request('type') === 'ticketing')>Ticketing</option></select></div>
             <div class="col-md-2"><label for="filter_category" class="form-label small">Kategori</label><select id="filter_category" name="category" class="form-select"><option value="">Semua Kategori</option>@foreach(\App\Models\DailyActivity::CATEGORIES as $category)<option value="{{ $category }}" @selected(request('category') === $category)>{{ $category }}</option>@endforeach</select></div>
+            <div class="col-md-4"><label for="filter_search" class="form-label small">Cari Kata Kunci</label><input type="search" id="filter_search" name="search" class="form-control" value="{{ request('search') }}" placeholder="Form, user, atau isi jawaban"></div>
             <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Tampilkan</button></div>
         </form>
     </div>
@@ -151,6 +152,9 @@
                 </tbody>
             </table>
         </div>
+        @if($dailyActivities->hasPages())
+        <div class="mt-4">{{ $dailyActivities->onEachSide(1)->links() }}</div>
+        @endif
     </div>
 </div>
 
@@ -232,7 +236,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h6 class="card-title mb-1">Detail Submission</h6>
-                <small class="text-muted">{{ $submissions->count() }} data sesuai filter</small>
+                <small class="text-muted">{{ $submissions->total() }} data sesuai filter, tampil 15 data per halaman</small>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.reports.export-pdf', request()->query()) }}" class="btn btn-sm btn-danger"><i class="fas fa-file-pdf me-1"></i>Export PDF</a>
@@ -291,6 +295,9 @@
                 </tbody>
             </table>
         </div>
+        @if($submissions->hasPages())
+        <div class="mt-4">{{ $submissions->links() }}</div>
+        @endif
         @else
         <div class="text-center py-4 text-muted">
             <i class="fas fa-inbox fa-2x mb-2"></i>

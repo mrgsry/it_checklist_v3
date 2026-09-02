@@ -22,6 +22,11 @@
                         @error('activity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-3">
+                        <label for="user_request" class="form-label">User Request</label>
+                        <input id="user_request" type="text" name="user_request" class="form-control @error('user_request') is-invalid @enderror" value="{{ old('user_request') }}" maxlength="255">
+                        @error('user_request')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-3">
                         <label for="category" class="form-label">Kategori</label>
                         <select id="category" name="category" class="form-select @error('category') is-invalid @enderror" required>
                             <option value="">Pilih kategori</option>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ChecklistSubmission;
 use App\Models\DailyActivity;
+use App\Models\UserRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,7 @@ class TicketingController extends Controller
         if (filled($existingTicket['ticket_url'] ?? null)) {
             $existingTicket = [...$existingTicket, 'category' => $this->normalizeCategory($existingTicket['category'] ?? $category)];
             $this->storeTicketData($submission, $item, $existingTicket);
+            $this->storeUserRequest($submission, $item, [...$existingTicket, ...$payload]);
             return response()->json(['success' => true, 'data' => $existingTicket, 'already_created' => true]);
         }
 
@@ -66,9 +68,13 @@ class TicketingController extends Controller
 
         $ticket = $this->ticketData($body, $category);
         if ($response->isSuccessful() && ($body['success'] ?? true) !== false && ($ticket['ticket_number'] || $ticket['ticket_url'])) {
+            $ticket = [...$ticket, ...collect($payload)->only([
+                'user', 'departement', 'contact', 'email', 'detail', 'location',
+            ])->all()];
             $ticketingData = $submission->ticketing_data ?? [];
             $ticketingData[$item] = $ticket;
             $this->storeTicketData($submission, $item, $ticket);
+            $this->storeUserRequest($submission, $item, $ticket);
         }
 
         return $response;
@@ -91,13 +97,19 @@ class TicketingController extends Controller
 
         $item = $payload['item'];
         $ticket = $submission->ticketing_data[$item] ?? [];
+        $storedCategory = $this->categoryValue($ticket);
         $ticket = array_merge($ticket, array_filter([
             'ticket_number' => $payload['ticket_number'] ?? null,
             'ticket_url' => $payload['ticket_url'] ?? null,
-            'category' => $payload['category'] ?? null,
         ], static fn ($value) => filled($value)));
-        $ticket['category'] = $this->normalizeCategory($ticket['category'] ?? null);
+        // The callback may contain Terra's default category. Keep the category
+        // selected when the ticket was created instead of replacing it.
+        $ticket['category'] = filled($storedCategory)
+            ? $storedCategory
+            : $this->normalizeCategory($payload['category'] ?? null);
         $this->storeTicketData($submission, $item, $ticket);
+
+        $this->storeUserRequest($submission, $item, $ticket);
 
         if ($this->isClosedStatus($payload['status'])) {
             $this->createTicketActivity($submission, $item, $ticket);
@@ -133,6 +145,7 @@ class TicketingController extends Controller
                 'type' => 'ticketing',
                 'category' => $ticket['category'] ?? DailyActivity::DEFAULT_CATEGORY,
                 'submission_id' => $submission->id,
+                'user_request' => $ticket['user'] ?? null,
                 'ticket_item' => $item,
                 'ticket_number' => $ticketNumber,
                 'ticket_url' => $ticket['ticket_url'] ?? null,
@@ -153,6 +166,7 @@ class TicketingController extends Controller
                 'notes' => filled($ticket['ticket_number'] ?? null) ? 'Ticket '.$ticket['ticket_number'] : null,
                 'ticket_number' => $ticket['ticket_number'] ?? null,
                 'ticket_url' => $ticket['ticket_url'] ?? null,
+                'user_request' => $ticket['user'] ?? null,
             ]
         );
 
@@ -167,9 +181,43 @@ class TicketingController extends Controller
         }
     }
 
+    private function storeUserRequest(ChecklistSubmission $submission, string $item, array $ticket): void
+    {
+        if (! filled($ticket['user'] ?? null)) {
+            return;
+        }
+
+        UserRequest::updateOrCreate(
+            ['submission_id' => $submission->id, 'ticket_item' => $item],
+            collect($ticket)->only(['user', 'departement', 'contact', 'email', 'detail', 'location'])
+                ->mapWithKeys(fn ($value, $key) => [$key === 'user' ? 'requester' : $key => $value])
+                ->all()
+        );
+    }
+
     private function normalizeCategory(?string $category): string
     {
-        return in_array($category, DailyActivity::CATEGORIES, true) ? $category : DailyActivity::DEFAULT_CATEGORY;
+        return filled($category) ? trim($category) : DailyActivity::DEFAULT_CATEGORY;
+    }
+
+    private function responseCategory(array $data, string $fallback): string
+    {
+        return $this->categoryValue($data) ?? $this->normalizeCategory($fallback);
+    }
+
+    private function categoryValue(array $data): ?string
+    {
+        $category = $data['category'] ?? $data['category_name'] ?? null;
+
+        if (is_array($category)) {
+            $category = $category['name']
+                ?? $category['category_name']
+                ?? $category['label']
+                ?? $category['value']
+                ?? null;
+        }
+
+        return filled($category) ? trim((string) $category) : null;
     }
 
     private function ticketData(array $body, string $category): array
@@ -179,7 +227,7 @@ class TicketingController extends Controller
         return [
             'ticket_number' => $data['ticket_number'] ?? $data['number'] ?? $data['ticket_no'] ?? null,
             'ticket_url' => $data['ticket_url'] ?? $data['url'] ?? null,
-            'category' => $this->normalizeCategory($data['category'] ?? $data['category_name'] ?? $category),
+            'category' => $this->responseCategory($data, $category),
         ];
     }
 

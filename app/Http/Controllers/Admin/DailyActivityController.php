@@ -19,6 +19,7 @@ class DailyActivityController extends Controller
             'user_id' => 'required|exists:users,id',
             'activity_date' => 'required|date',
             'activity' => 'required|string|max:255',
+            'user_request' => 'nullable|string|max:255',
             'category' => ['nullable', 'in:'.implode(',', DailyActivity::CATEGORIES)],
             'notes' => 'nullable|string|max:2000',
         ]);
