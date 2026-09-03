@@ -72,36 +72,37 @@
                 <strong class="sidebar-brand-text font-headline tracking-tight">IT Checklist</strong>
             </div>
             <ul class="nav flex-column mt-3 flex-grow-1" style="overflow-y: auto;">
-                <li class="nav-item">
+                @if(auth()->user()->hasModuleAccess('dashboard'))<li class="nav-item">
                     <a href="{{ route('admin.dashboard') }}"
                         class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" data-sidebar-label="Dashboard">
                         <i class="fas fa-tachometer-alt"></i><span class="sidebar-link-text">Dashboard</span>
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('checklist'))<li class="nav-item">
                     <a href="{{ route('admin.forms.index') }}"
                         class="nav-link {{ request()->routeIs('admin.forms.*') ? 'active' : '' }}" data-sidebar-label="Form Checklist">
                         <i class="fas fa-wpforms"></i><span class="sidebar-link-text">Form Checklist</span>
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('submissions'))<li class="nav-item">
                     <a href="{{ route('admin.submissions.index') }}"
                         class="nav-link {{ request()->routeIs('admin.submissions.*') ? 'active' : '' }}" data-sidebar-label="Submissions">
                         <i class="fas fa-inbox"></i><span class="sidebar-link-text">Submissions</span>
                     </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('admin.daily-activities.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.daily-activities.*') ? 'active' : '' }}" data-sidebar-label="Daily Activity">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('daily-activity'))<li class="nav-item">
+                    <a href="{{ route('admin.activity-monitor') }}"
+                        class="nav-link {{ request()->routeIs('admin.activity-monitor') ? 'active' : '' }}" data-sidebar-label="Daily Activity">
                         <i class="fas fa-clipboard-list"></i><span class="sidebar-link-text">Daily Activity</span>
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('asset'))<li class="nav-item">
                     <a href="{{ route('admin.assets.index') }}"
                         class="nav-link {{ request()->routeIs('admin.assets.*') ? 'active' : '' }}" data-sidebar-label="Asset">
                         <i class="fas fa-boxes-stacked"></i><span class="sidebar-link-text">Asset</span>
                     </a>
-                </li>
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('document-maker'))
                 @php($documentMakerActive = request()->routeIs('admin.memo-maker.*', 'admin.berita-acara-maker.*', 'admin.instruksi-kerja-maker.*'))
                 <li class="nav-item">
                     <button id="document-maker-toggle" class="nav-link document-maker-heading w-100 border-0 bg-transparent text-start {{ $documentMakerActive ? 'active' : '' }}" type="button" aria-expanded="{{ $documentMakerActive ? 'true' : 'false' }}" aria-controls="document-maker-menu" data-sidebar-label="Document Maker">
@@ -128,13 +129,14 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item">
+                @endif
+                @if(auth()->user()->hasModuleAccess('reports'))<li class="nav-item">
                     <a href="{{ route('admin.reports.index') }}"
                         class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" data-sidebar-label="Laporan">
                         <i class="fas fa-chart-bar"></i><span class="sidebar-link-text">Laporan</span>
                     </a>
-                </li>
-                @if(auth()->user()->isSuperAdmin())
+                </li>@endif
+                @if(auth()->user()->isSuperAdmin() && auth()->user()->hasModuleAccess('user-management'))
                 <li class="nav-item">
                     <a href="{{ route('admin.users.index') }}"
                         class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" data-sidebar-label="Manajemen User">
@@ -172,49 +174,49 @@
                 </button>
             </div>
             <ul class="nav flex-column mt-3 flex-grow-1">
-                <li class="nav-item">
+                @if(auth()->user()->hasModuleAccess('dashboard'))<li class="nav-item">
                     <a href="{{ route('admin.dashboard') }}"
                         class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('checklist'))<li class="nav-item">
                     <a href="{{ route('admin.forms.index') }}"
                         class="nav-link {{ request()->routeIs('admin.forms.*') ? 'active' : '' }}">
                         <i class="fas fa-wpforms"></i> Form Checklist
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('submissions'))<li class="nav-item">
                     <a href="{{ route('admin.submissions.index') }}"
                         class="nav-link {{ request()->routeIs('admin.submissions.*') ? 'active' : '' }}">
                         <i class="fas fa-inbox"></i> Submissions
                     </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('admin.daily-activities.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.daily-activities.*') ? 'active' : '' }}">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('daily-activity'))<li class="nav-item">
+                    <a href="{{ route('admin.activity-monitor') }}"
+                        class="nav-link {{ request()->routeIs('admin.activity-monitor') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> Daily Activity
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('asset'))<li class="nav-item">
                     <a href="{{ route('admin.assets.index') }}"
                         class="nav-link {{ request()->routeIs('admin.assets.*') ? 'active' : '' }}">
                         <i class="fas fa-boxes-stacked"></i> Asset
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('document-maker'))<li class="nav-item">
                     <a href="{{ route('admin.memo-maker.index') }}"
                         class="nav-link {{ request()->routeIs('admin.memo-maker.*') ? 'active' : '' }}">
                         <i class="fas fa-file-signature"></i> Memo Maker
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('reports'))<li class="nav-item">
                     <a href="{{ route('admin.reports.index') }}"
                         class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                         <i class="fas fa-chart-bar"></i> Laporan
                     </a>
-                </li>
-                @if(auth()->user()->isSuperAdmin())
+                </li>@endif
+                @if(auth()->user()->isSuperAdmin() && auth()->user()->hasModuleAccess('user-management'))
                 <li class="nav-item">
                     <a href="{{ route('admin.users.index') }}"
                         class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
@@ -285,6 +287,8 @@
             </div>
         </div>
     </div>
+
+    @stack('scripts')
 
     <script>
         // Show loading indicator when navigating to another page

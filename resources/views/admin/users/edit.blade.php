@@ -17,6 +17,22 @@
                 @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Hak Akses Modul</label>
+                <div class="row g-2">
+                    @foreach($permissions as $permission)
+                    <div class="col-md-6 col-lg-4">
+                        @php($currentLevel = old("permissions.{$permission['key']}", $user->hasModuleAccess($permission['key'], 'write') ? 'write' : ($user->hasModuleAccess($permission['key']) ? 'read' : 'none')))
+                        <label class="form-label small mb-1" for="permission-{{ $permission['key'] }}">{{ $permission['label'] }}</label>
+                        <select class="form-select form-select-sm" name="permissions[{{ $permission['key'] }}]" id="permission-{{ $permission['key'] }}">
+                            <option value="none" @selected($currentLevel === 'none')>Tidak ada akses</option><option value="read" @selected($currentLevel === 'read')>Read Only</option><option value="write" @selected($currentLevel === 'write')>Read / Write</option>
+                        </select>
+                    </div>
+                    @endforeach
+                </div>
+                @error('permissions.*')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
+            </div>
+
             <div class="mb-3">
                 <label class="form-label fw-semibold">Email</label>
                 <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"

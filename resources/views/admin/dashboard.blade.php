@@ -345,13 +345,11 @@
     let isUserIdle = false;
     let idleTimeout;
     let metricsInFlight = false;
-    let monitorInFlight = false;
     const pollIntervalMs = 5000;
 
     document.addEventListener('visibilitychange', () => {
         isPageVisible = !document.hidden;
         if (isPageVisible) {
-            refreshActivityMonitor();
             refreshMetrics();
         }
     });
@@ -369,52 +367,7 @@
     document.addEventListener('click', resetIdleTimer);
     resetIdleTimer();
 
-    const monitorBody = document.getElementById('activity-monitor-body');
-    const monitorStatus = document.getElementById('activity-monitor-status');
-    const monitorEndpoint = @json(route('admin.activity-monitor'));
     const cardDetailsEndpoint = @json(route('admin.dashboard.card-details', ['card' => '__CARD__']));
-    let knownActivityIds = new Set([...monitorBody.querySelectorAll('[data-activity-id]')].map(row => row.dataset.activityId));
-
-    const escapeMonitorValue = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&', '<': '<', '>': '>', "'": '&#039;', '"': '"' }[character]));
-    const monitorStatusLabel = status => ({ submitted: 'Submitted', completed: 'Selesai', in_progress: 'Progress', pending: 'Pending', blocked: 'Terhambat' }[status] || status);
-
-    async function refreshActivityMonitor() {
-        if (!isPageVisible) return;
-        if (monitorInFlight) return;
-        try {
-            monitorInFlight = true;
-            const response = await fetch(monitorEndpoint, {
-                cache: 'no-store',
-                headers: { Accept: 'application/json' },
-            });
-            if (!response.ok) return;
-            const items = (await response.json()).data;
-            const newIds = new Set(items.map(item => item.id));
-            const hasNew = items.some(item => !knownActivityIds.has(item.id));
-            monitorBody.innerHTML = items.length ? items.map(item => {
-                const status = item.status === 'completed'
-                    ? 'chip-status-done'
-                    : (item.status === 'in_progress' || item.status === 'pending')
-                        ? 'chip-status-pending'
-                        : 'chip-status-archived';
-
-                return `<tr data-activity-id="${escapeMonitorValue(item.id)}"${!knownActivityIds.has(item.id) ? ' class="table-success"' : ''}><td class="fw-semibold">${escapeMonitorValue(item.user)}</td><td>${escapeMonitorValue(item.user_request || '-')}</td><td>${escapeMonitorValue(item.activity)}</td><td><span class="badge text-bg-info">${escapeMonitorValue(item.type)}</span></td><td>${escapeMonitorValue(item.category || '-')}</td><td><span class="chip ${status}"><span class="chip-buffering-label">${escapeMonitorValue(monitorStatusLabel(item.status))}</span></span></td><td>${item.ticket_url ? `<a href="${escapeMonitorValue(item.ticket_url)}" target="_blank" rel="noopener" title="Lihat progress ticket"><i class="fas fa-chart-line"></i></a>` : escapeMonitorValue(item.updated_label)}</td></tr>`;
-            }).join('') : '<tr><td colspan="7" class="text-center text-muted py-4">Belum ada aktivitas user.</td></tr>';
-            knownActivityIds = newIds;
-            monitorStatus.textContent = hasNew ? 'Ada pembaruan baru' : 'Diperbarui baru saja';
-            monitorStatus.className = `badge ${hasNew ? 'text-bg-success' : 'text-bg-light'}`;
-            if (hasNew) setTimeout(() => monitorBody.querySelectorAll('.table-success').forEach(row => row.classList.remove('table-success')), 2500);
-        } catch (error) {
-            monitorStatus.textContent = 'Monitoring offline';
-            monitorStatus.className = 'badge text-bg-warning';
-        } finally {
-            monitorInFlight = false;
-        }
-    }
-
-    refreshActivityMonitor();
-    window.setInterval(refreshActivityMonitor, pollIntervalMs);
-
     // Poll and update dashboard metrics
     const metricsEndpoint = @json(route('admin.dashboard.metrics'));
     async function refreshMetrics() {

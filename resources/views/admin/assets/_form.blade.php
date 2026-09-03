@@ -1,4 +1,5 @@
 @csrf
+@php($cancelRoute = $cancelRoute ?? route('admin.assets.index'))
 
 <div class="row g-3">
     <div class="col-md-6">
@@ -23,27 +24,27 @@
     </div>
     <div class="col-md-4">
         <label for="brand" class="form-label fw-semibold">Merk</label>
-        <input id="brand" type="text" name="brand" maxlength="100" value="{{ old('brand', $asset->brand ?? '') }}" class="form-control @error('brand') is-invalid @enderror" required>
+        <input id="brand" type="text" name="brand" maxlength="100" value="{{ old('brand', $asset->brand ?? '') }}" class="form-control @error('brand') is-invalid @enderror">
         @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4">
         <label for="type" class="form-label fw-semibold">Type</label>
-        <input id="type" type="text" name="type" maxlength="100" value="{{ old('type', $asset->type ?? '') }}" class="form-control @error('type') is-invalid @enderror" required>
+        <input id="type" type="text" name="type" maxlength="100" value="{{ old('type', $asset->type ?? '') }}" class="form-control @error('type') is-invalid @enderror">
         @error('type')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4">
         <label for="item_code" class="form-label fw-semibold">Kode Barang</label>
-        <input id="item_code" type="text" name="item_code" maxlength="100" value="{{ old('item_code', $asset->item_code ?? '') }}" class="form-control @error('item_code') is-invalid @enderror" required>
+        <input id="item_code" type="text" name="item_code" maxlength="100" value="{{ old('item_code', $asset->item_code ?? '') }}" class="form-control @error('item_code') is-invalid @enderror">
         @error('item_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4">
         <label for="inventory_number" class="form-label fw-semibold">No Invent</label>
-        <input id="inventory_number" type="text" name="inventory_number" maxlength="100" value="{{ old('inventory_number', $asset->inventory_number ?? '') }}" class="form-control @error('inventory_number') is-invalid @enderror" required>
+        <input id="inventory_number" type="text" name="inventory_number" maxlength="100" value="{{ old('inventory_number', $asset->inventory_number ?? '') }}" class="form-control @error('inventory_number') is-invalid @enderror">
         @error('inventory_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4">
         <label for="serial_number" class="form-label fw-semibold">SN</label>
-        <input id="serial_number" type="text" name="serial_number" maxlength="150" value="{{ old('serial_number', $asset->serial_number ?? '') }}" class="form-control @error('serial_number') is-invalid @enderror" required>
+        <input id="serial_number" type="text" name="serial_number" maxlength="150" value="{{ old('serial_number', $asset->serial_number ?? '') }}" class="form-control @error('serial_number') is-invalid @enderror">
         @error('serial_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4">
@@ -65,5 +66,5 @@
 
 <div class="d-flex gap-2 mt-4">
     <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{ $submitLabel }}</button>
-    <a href="{{ route('admin.assets.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Batal</a>
+    <a href="{{ $cancelRoute }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Batal</a>
 </div>

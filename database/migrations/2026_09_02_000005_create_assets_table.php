@@ -15,11 +15,11 @@ return new class extends Migration
                 ->restrictOnDelete();
             $table->string('name');
             $table->unsignedSmallInteger('purchase_year')->index();
-            $table->string('brand', 100);
-            $table->string('type', 100);
-            $table->string('item_code', 100)->unique();
-            $table->string('inventory_number', 100)->unique();
-            $table->string('serial_number', 150)->unique();
+            $table->string('brand', 100)->nullable();
+            $table->string('type', 100)->nullable();
+            $table->string('item_code', 100)->nullable()->unique();
+            $table->string('inventory_number', 100)->nullable()->unique();
+            $table->string('serial_number', 150)->nullable()->unique();
             $table->unsignedInteger('quantity')->default(1);
             $table->string('location')->index();
             $table->timestamps();

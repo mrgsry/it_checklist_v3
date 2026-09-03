@@ -24,30 +24,35 @@
                 <strong class="sidebar-brand-text font-headline tracking-tight">IT Checklist</strong>
             </div>
             <ul class="nav flex-column mt-3 flex-grow-1" style="overflow-y: auto;">
-                <li class="nav-item">
+                @if(auth()->user()->hasModuleAccess('dashboard'))<li class="nav-item">
                     <a href="{{ route('user.dashboard') }}"
                         class="nav-link {{ request()->routeIs('user.dashboard') ? 'active' : '' }}" data-sidebar-label="Dashboard">
                         <i class="fas fa-home"></i><span class="sidebar-link-text">Dashboard</span>
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('asset'))<li class="nav-item">
+                    <a href="{{ route('user.assets.index') }}" class="nav-link {{ request()->routeIs('user.assets.*') ? 'active' : '' }}" data-sidebar-label="Asset">
+                        <i class="fas fa-boxes-stacked"></i><span class="sidebar-link-text">Asset</span>
+                    </a>
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('checklist'))<li class="nav-item">
                     <a href="{{ route('user.checklist.index') }}"
                         class="nav-link {{ request()->routeIs('user.checklist.*') ? 'active' : '' }}" data-sidebar-label="Checklist Saya">
                         <i class="fas fa-tasks"></i><span class="sidebar-link-text">Checklist Saya</span>
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('daily-activity'))<li class="nav-item">
                     <a href="{{ route('user.daily-activities.index') }}"
                         class="nav-link {{ request()->routeIs('user.daily-activities.*') ? 'active' : '' }}" data-sidebar-label="Daily Activity">
                         <i class="fas fa-clipboard-list"></i><span class="sidebar-link-text">Daily Activity</span>
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('history'))<li class="nav-item">
                     <a href="{{ route('user.history') }}"
                         class="nav-link {{ request()->routeIs('user.history') ? 'active' : '' }}" data-sidebar-label="Riwayat">
                         <i class="fas fa-history"></i><span class="sidebar-link-text">Riwayat</span>
                     </a>
-                </li>
+                </li>@endif
             </ul>
             <div class="p-3 border-top border-white/10 mt-auto">
                 <div class="sidebar-user text-white-50 small mb-3 px-2">
@@ -78,30 +83,35 @@
                 </button>
             </div>
             <ul class="nav flex-column mt-3 flex-grow-1">
-                <li class="nav-item">
+                @if(auth()->user()->hasModuleAccess('dashboard'))<li class="nav-item">
                     <a href="{{ route('user.dashboard') }}"
                         class="nav-link {{ request()->routeIs('user.dashboard') ? 'active' : '' }}">
                         <i class="fas fa-home"></i> Dashboard
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('asset'))<li class="nav-item">
+                    <a href="{{ route('user.assets.index') }}" class="nav-link {{ request()->routeIs('user.assets.*') ? 'active' : '' }}">
+                        <i class="fas fa-boxes-stacked"></i> Asset
+                    </a>
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('checklist'))<li class="nav-item">
                     <a href="{{ route('user.checklist.index') }}"
                         class="nav-link {{ request()->routeIs('user.checklist.*') ? 'active' : '' }}">
                         <i class="fas fa-tasks"></i> Checklist Saya
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('daily-activity'))<li class="nav-item">
                     <a href="{{ route('user.daily-activities.index') }}"
                         class="nav-link {{ request()->routeIs('user.daily-activities.*') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> Daily Activity
                     </a>
-                </li>
-                <li class="nav-item">
+                </li>@endif
+                @if(auth()->user()->hasModuleAccess('history'))<li class="nav-item">
                     <a href="{{ route('user.history') }}"
                         class="nav-link {{ request()->routeIs('user.history') ? 'active' : '' }}">
                         <i class="fas fa-history"></i> Riwayat
                     </a>
-                </li>
+                </li>@endif
             </ul>
             <div class="p-3 border-top border-white/10 mt-auto">
                 <div class="sidebar-user text-white-50 small mb-3 px-2">

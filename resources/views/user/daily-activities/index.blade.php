@@ -4,8 +4,10 @@
 @section('page-title', 'Daily Activity')
 
 @section('content')
+@php($canWriteDailyActivity = auth()->user()->hasModuleAccess('daily-activity', 'write'))
 <div class="row g-4">
     <div class="col-lg-4">
+        @if($canWriteDailyActivity)
         <div class="card shadow-sm border-0">
             <div class="card-body">
                 <h5 class="card-title mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>Tambah Aktivitas</h5>
@@ -54,6 +56,9 @@
                 </form>
             </div>
         </div>
+        @else
+        <div class="alert alert-secondary"><i class="fas fa-lock me-1"></i>Akses Daily Activity hanya baca.</div>
+        @endif
     </div>
 
     <div class="col-lg-8">
@@ -81,7 +86,7 @@
                             </div>
                             <div class="text-end flex-shrink-0">
                                 <span class="badge text-bg-{{ $status[0] }}">{{ $status[1] }}</span>
-                                <div class="mt-2">
+                                @if($canWriteDailyActivity)<div class="mt-2">
                                     <a href="{{ route('user.daily-activities.index', ['date' => $selectedDate, 'edit' => $dailyActivity->id]) }}" class="btn btn-sm btn-outline-secondary" title="Perbarui status dan catatan"><i class="fas fa-pen"></i></a>
                                     @unless($dailyActivity->isAssigned())
                                         <form class="d-inline" action="{{ route('user.daily-activities.destroy', $dailyActivity) }}" method="POST" onsubmit="return confirm('Hapus aktivitas ini?')">
@@ -89,10 +94,10 @@
                                             <button class="btn btn-sm btn-outline-danger" type="submit" title="Hapus aktivitas"><i class="fas fa-trash"></i></button>
                                         </form>
                                     @endunless
-                                </div>
+                                </div>@endif
                             </div>
                         </div>
-                        @if($isEditing)
+                        @if($isEditing && $canWriteDailyActivity)
                         <div class="mt-3">
                             <form method="POST" action="{{ route('user.daily-activities.update', $dailyActivity) }}" class="row g-2 border-top pt-3">
                                 @csrf @method('PUT')

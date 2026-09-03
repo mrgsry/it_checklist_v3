@@ -6,10 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+use App\Support\PermissionRegistry;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = ['name', 'email', 'password', 'role'];
 
@@ -53,5 +55,23 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === 'superadmin';
+    }
+
+    public function hasModuleAccess(string $module, string $level = 'read'): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $permissions = $this->getPermissionNames();
+        $legacy = PermissionRegistry::legacy($module);
+        $read = PermissionRegistry::read($module);
+        $write = PermissionRegistry::write($module);
+
+        if ($level === 'write') {
+            return $permissions->contains($write);
+        }
+
+        return $permissions->contains($read) || $permissions->contains($write) || $permissions->contains($legacy);
     }
 }

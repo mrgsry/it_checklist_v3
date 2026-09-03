@@ -4,6 +4,7 @@
 @section('page-title', 'Checklist Saya')
 
 @section('content')
+@php($canWriteChecklist = auth()->user()->hasModuleAccess('checklist', 'write'))
 <div class="mb-3">
     <h6 class="text-muted">Hari ini: <strong>{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM Y') }}</strong></h6>
 </div>
@@ -27,10 +28,14 @@
                 <p class="small text-success mb-0 mt-3">
                     <i class="fas fa-check-circle me-1"></i>Form sudah disubmit.
                 </p>
-                @else
+                @elseif($canWriteChecklist)
                 <a href="{{ route('user.checklist.fill', $form->id) }}" class="btn btn-sm btn-primary mt-3 w-100">
                     <i class="fas fa-edit me-1"></i>Isi Sekarang
                 </a>
+                @else
+                <p class="small text-muted mb-0 mt-3">
+                    <i class="fas fa-lock me-1"></i>Akses hanya baca.
+                </p>
                 @endif
             </div>
         </div>

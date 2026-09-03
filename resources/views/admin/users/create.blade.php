@@ -45,6 +45,21 @@
                 @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Hak Akses Modul</label>
+                <div class="row g-2">
+                    @foreach($permissions as $permission)
+                    <div class="col-md-6 col-lg-4">
+                        <label class="form-label small mb-1" for="permission-{{ $permission['key'] }}">{{ $permission['label'] }}</label>
+                        <select class="form-select form-select-sm" name="permissions[{{ $permission['key'] }}]" id="permission-{{ $permission['key'] }}">
+                            <option value="none" @selected(old("permissions.{$permission['key']}", $permission['default_user'] ? 'read' : 'none') === 'none')>Tidak ada akses</option><option value="read" @selected(old("permissions.{$permission['key']}", $permission['default_user'] ? 'read' : 'none') === 'read')>Read Only</option><option value="write" @selected(old("permissions.{$permission['key']}", $permission['default_user'] ? 'read' : 'none') === 'write')>Read / Write</option>
+                        </select>
+                    </div>
+                    @endforeach
+                </div>
+                @error('permissions.*')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
+            </div>
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-1"></i>Simpan

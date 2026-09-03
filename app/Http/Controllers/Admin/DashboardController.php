@@ -10,6 +10,8 @@ use App\Models\FormAssignment;
 use App\Models\User;
 use App\Services\SchedulerService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -22,7 +24,7 @@ class DashboardController extends Controller
             $trendPeriod = 'week';
         }
 
-        $cacheKey = 'dashboard_cache_' . $today->toDateString() . '_' . $trendPeriod;
+        $cacheKey = 'dashboard_cache_'.$today->toDateString().'_'.$trendPeriod;
         // Keep dashboard payload cached longer so moving between admin menus does not
         // repeatedly execute expensive aggregate queries.
         $cacheTtl = 900;
@@ -36,7 +38,7 @@ class DashboardController extends Controller
                 $query->whereDate('assigned_at', '<=', $today)
                     ->orWhereNull('assigned_at');
             })->count();
-            
+
             $todaySubmissions = ChecklistSubmission::where('status', 'submitted')
                 ->whereDate('submission_date', $today)
                 ->count();
@@ -275,12 +277,12 @@ class DashboardController extends Controller
 
         // Upcoming scheduled forms (next 7 days)
         $upcomingForms = cache()->remember(
-            'dashboard_upcoming_forms_' . $today->toDateString(),
+            'dashboard_upcoming_forms_'.$today->toDateString(),
             1800,
             fn () => $this->getUpcomingScheduledForms()
         );
         $activityFeed = cache()->remember(
-            'dashboard_activity_feed_snapshot_' . $today->toDateString(),
+            'dashboard_activity_feed_snapshot_'.$today->toDateString(),
             45,
             fn () => $this->activityFeed()
         );
@@ -309,14 +311,17 @@ class DashboardController extends Controller
         ));
     }
 
-    public function activityMonitor()
+    public function activityMonitorPage(Request $request)
     {
-        // This endpoint is polled by the dashboard and must reflect status changes
-        // immediately instead of serving a stale dashboard snapshot.
-        return response()->json([
-            'data' => $this->activityFeed(),
-            'generatedAt' => now()->toIso8601String(),
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'in:daily_activity,ticketing,submission'],
+            'status' => ['nullable', 'in:completed,in_progress,blocked,submitted'],
+        ]);
+
+        return view('admin.activity-monitor', [
+            'activities' => $this->paginatedActivityMonitor($filters),
+        ]);
     }
 
     public function dashboardMetrics()
@@ -549,6 +554,82 @@ class DashboardController extends Controller
             ]);
 
         return $activities->concat($submissions)->sortByDesc('updated_at')->values()->take(15);
+    }
+
+    private function paginatedActivityMonitor(array $filters): LengthAwarePaginator
+    {
+        $search = $filters['search'] ?? null;
+        $type = $filters['type'] ?? null;
+        $status = $filters['status'] ?? null;
+
+        $activities = collect();
+        if (! $type || in_array($type, ['daily_activity', 'ticketing'], true)) {
+            $activities = DailyActivity::query()
+                ->select(['id', 'user_id', 'user_request', 'type', 'category', 'activity', 'ticket_url', 'status', 'updated_at'])
+                ->with('user:id,name')
+                ->when($type, fn ($query) => $query->ofType($type))
+                ->when($status, fn ($query) => $query->where('status', $status))
+                ->when($search, function ($query) use ($search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('activity', 'like', "%{$search}%")
+                            ->orWhere('user_request', 'like', "%{$search}%")
+                            ->orWhere('category', 'like', "%{$search}%")
+                            ->orWhereHas('user', fn ($query) => $query->where('name', 'like', "%{$search}%"));
+                    });
+                })
+                ->get()
+                ->map(fn (DailyActivity $activity) => [
+                    'id' => 'daily-'.$activity->id,
+                    'user' => $activity->user?->name ?? '-',
+                    'user_request' => $activity->user_request ?? '-',
+                    'activity' => $activity->activity,
+                    'type' => $activity->type === 'ticketing' ? 'Ticketing' : 'Daily Activity',
+                    'category' => $activity->category,
+                    'ticket_url' => $activity->ticket_url,
+                    'status' => $activity->status,
+                    'updated_at' => $activity->updated_at,
+                    'updated_label' => $activity->updated_at?->format('d M Y, H:i'),
+                ]);
+        }
+
+        $submissions = collect();
+        if (! $type || $type === 'submission') {
+            $submissions = ChecklistSubmission::query()
+                ->select(['id', 'form_id', 'submitted_by', 'status', 'submitted_at', 'updated_at'])
+                ->with(['form:id,title', 'submitter:id,name'])
+                ->when($status, fn ($query) => $query->where('status', $status))
+                ->when($search, function ($query) use ($search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->whereHas('form', fn ($query) => $query->where('title', 'like', "%{$search}%"))
+                            ->orWhereHas('submitter', fn ($query) => $query->where('name', 'like', "%{$search}%"));
+                    });
+                })
+                ->get()
+                ->map(fn (ChecklistSubmission $submission) => [
+                    'id' => 'submission-'.$submission->id,
+                    'user' => $submission->submitter?->name ?? '-',
+                    'user_request' => '-',
+                    'activity' => $submission->form?->title ?? 'Form Checklist',
+                    'type' => 'Submit Form',
+                    'category' => '-',
+                    'ticket_url' => null,
+                    'status' => $submission->status,
+                    'updated_at' => $submission->submitted_at ?: $submission->updated_at,
+                    'updated_label' => ($submission->submitted_at ?: $submission->updated_at)?->format('d M Y, H:i'),
+                ]);
+        }
+
+        $items = $activities->concat($submissions)->sortByDesc('updated_at')->values();
+        $perPage = 15;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+        return new LengthAwarePaginator(
+            $items->forPage($currentPage, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
     }
 
     /**

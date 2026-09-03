@@ -1,19 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\AssetCategory;
-use App\Services\AssetImportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use PhpOffice\PhpSpreadsheet\Writer\Xls;
 
 class AssetController extends Controller
 {
@@ -32,76 +28,7 @@ class AssetController extends Controller
 
         $categories = AssetCategory::query()->orderBy('name')->get();
 
-        return view('admin.assets.index', compact('assets', 'categories'));
-    }
-
-    public function exportPdf(Request $request)
-    {
-        $filters = $this->validatedFilters($request);
-        $assets = $this->filteredAssets($filters)->get();
-
-        return Pdf::loadView('admin.assets.pdf', compact('assets', 'filters'))
-            ->setPaper('a4', 'landscape')
-            ->download('asset-inventory-'.now()->format('Ymd-His').'.pdf');
-    }
-
-    public function exportExcel(Request $request)
-    {
-        $filters = $this->validatedFilters($request);
-        $assets = $this->filteredAssets($filters)->get();
-
-        return response()->view('admin.assets.excel', compact('assets', 'filters'))
-            ->header('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
-            ->header('Content-Disposition', 'attachment; filename="asset-inventory-'.now()->format('Ymd-His').'.xls"');
-    }
-
-    public function importForm(): View
-    {
-        return view('admin.assets.import');
-    }
-
-    public function import(Request $request, AssetImportService $importService): RedirectResponse
-    {
-        $request->validate([
-            'file' => ['required', 'file', 'max:10240', 'mimes:csv,xls,xlsx'],
-        ], [
-            'file.mimes' => 'File harus berformat CSV, XLS, atau XLSX.',
-            'file.max' => 'Ukuran file maksimal 10 MB.',
-        ]);
-
-        try {
-            $count = $importService->import($request->file('file'));
-        } catch (ValidationException $exception) {
-            return back()->withInput()->withErrors($exception->errors());
-        } catch (\Throwable $exception) {
-            report($exception);
-
-            return back()->withInput()->withErrors([
-                'file' => 'File gagal diproses. Pastikan file menggunakan template asset dan format CSV, XLS, atau XLSX yang valid.',
-            ]);
-        }
-
-        return redirect()->route('admin.assets.index')->with('success', "{$count} asset berhasil diimport.");
-    }
-
-    public function downloadTemplate(AssetImportService $importService)
-    {
-        return response()->streamDownload(function () use ($importService): void {
-            $writer = new Xls($importService->template());
-            $writer->save('php://output');
-        }, 'asset-import-template.xls', [
-            'Content-Type' => 'application/vnd.ms-excel',
-        ]);
-    }
-
-    private function validatedFilters(Request $request): array
-    {
-        return $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'asset_category_id' => ['nullable', 'integer', 'exists:asset_categories,id'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'purchase_year' => ['nullable', 'integer', 'between:1900,'.now()->year],
-        ]);
+        return view('user.assets.index', compact('assets', 'categories'));
     }
 
     private function filteredAssets(array $filters): Builder
@@ -123,7 +50,7 @@ class AssetController extends Controller
 
     public function create(): View
     {
-        return view('admin.assets.create', [
+        return view('user.assets.create', [
             'categories' => AssetCategory::query()->orderBy('name')->get(),
         ]);
     }
@@ -132,19 +59,12 @@ class AssetController extends Controller
     {
         Asset::create($this->validatedData($request));
 
-        return redirect()->route('admin.assets.index')->with('success', 'Asset berhasil ditambahkan.');
-    }
-
-    public function show(Asset $asset): View
-    {
-        $asset->load('category');
-
-        return view('admin.assets.show', compact('asset'));
+        return redirect()->route('user.assets.index')->with('success', 'Asset berhasil ditambahkan.');
     }
 
     public function edit(Asset $asset): View
     {
-        return view('admin.assets.edit', [
+        return view('user.assets.edit', [
             'asset' => $asset,
             'categories' => AssetCategory::query()->orderBy('name')->get(),
         ]);
@@ -154,14 +74,14 @@ class AssetController extends Controller
     {
         $asset->update($this->validatedData($request, $asset));
 
-        return redirect()->route('admin.assets.index')->with('success', 'Asset berhasil diperbarui.');
+        return redirect()->route('user.assets.index')->with('success', 'Asset berhasil diperbarui.');
     }
 
     public function destroy(Asset $asset): RedirectResponse
     {
         $asset->delete();
 
-        return redirect()->route('admin.assets.index')->with('success', 'Asset berhasil dihapus.');
+        return redirect()->route('user.assets.index')->with('success', 'Asset berhasil dihapus.');
     }
 
     private function validatedData(Request $request, ?Asset $asset = null): array

@@ -16,6 +16,8 @@
                     <a href="{{ route('admin.asset-categories.index') }}" class="btn btn-outline-secondary"><i class="fas fa-tags me-1"></i>Kategori</a>
                 @endif
                 <a href="{{ route('admin.assets.export-excel', request()->query()) }}" class="btn btn-outline-success" title="Export ke Excel"><i class="fas fa-file-excel me-1"></i>Excel</a>
+                <a href="{{ route('admin.assets.import.template') }}" class="btn btn-outline-secondary" title="Download template import"><i class="fas fa-download me-1"></i>Template</a>
+                <a href="{{ route('admin.assets.import.form') }}" class="btn btn-outline-primary"><i class="fas fa-file-import me-1"></i>Import</a>
                 <a href="{{ route('admin.assets.export-pdf', request()->query()) }}" class="btn btn-outline-danger" title="Export ke PDF"><i class="fas fa-file-pdf me-1"></i>PDF</a>
                 <a href="{{ route('admin.assets.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Tambah Asset</a>
             </div>

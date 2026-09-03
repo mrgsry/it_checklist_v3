@@ -3,7 +3,6 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\DailyActivity;
-use App\Models\ChecklistSubmission;
 use App\Models\User;
 use App\Notifications\DailyActivityAssignedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -58,17 +57,34 @@ class DailyActivityAssignmentTest extends TestCase
         $this->actingAs($user)->get(route('admin.activity-monitor'))->assertForbidden();
     }
 
-    public function test_admin_monitor_returns_daily_activity_and_submission(): void
+    public function test_admin_monitor_page_renders_an_activity_table(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $user = User::factory()->create(['role' => 'user']);
         DailyActivity::factory()->for($user)->create(['activity' => 'Audit perangkat']);
 
-        $response = $this->actingAs($admin)->getJson(route('admin.activity-monitor'));
-        $response->assertOk()->assertJsonFragment(['type' => 'Daily Activity', 'user' => $user->name]);
+        $this->actingAs($admin)->get(route('admin.activity-monitor'))
+            ->assertOk()
+            ->assertViewIs('admin.activity-monitor')
+            ->assertSee('Aktivitas User Saat Ini')
+            ->assertSee('Audit perangkat');
     }
 
-    public function test_admin_monitor_returns_the_latest_daily_activity_status(): void
+    public function test_admin_can_filter_and_search_monitor_activities(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'user', 'name' => 'Budi Monitor']);
+        DailyActivity::factory()->for($user)->create(['activity' => 'Audit perangkat', 'status' => 'completed']);
+        DailyActivity::factory()->for($user)->create(['activity' => 'Periksa jaringan', 'status' => 'blocked']);
+
+        $this->actingAs($admin)->get(route('admin.activity-monitor', ['search' => 'Audit', 'status' => 'completed']))
+            ->assertOk()
+            ->assertSee('Audit perangkat')
+            ->assertDontSee('Periksa jaringan')
+            ->assertSee('Filter Activity Monitor');
+    }
+
+    public function test_admin_monitor_shows_the_latest_daily_activity_status(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $user = User::factory()->create(['role' => 'user']);
@@ -76,16 +92,17 @@ class DailyActivityAssignmentTest extends TestCase
             'activity' => 'Update perangkat',
             'status' => 'in_progress',
         ]);
-
-        $this->actingAs($admin)->getJson(route('admin.activity-monitor'))
-            ->assertJsonFragment(['id' => 'daily-'.$activity->id, 'status' => 'in_progress']);
+        $this->actingAs($admin)->get(route('admin.activity-monitor'))
+            ->assertOk()
+            ->assertSee('Update perangkat')
+            ->assertSee('Dalam Proses');
 
         $activity->update(['status' => 'completed']);
 
-        $this->actingAs($admin)->getJson(route('admin.activity-monitor'))
+        $this->actingAs($admin)->get(route('admin.activity-monitor'))
             ->assertOk()
-            ->assertJsonFragment(['id' => 'daily-'.$activity->id, 'status' => 'completed'])
-            ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            ->assertSee('Update perangkat')
+            ->assertSee('Selesai');
     }
 
     public function test_admin_can_view_daily_activity_card_details(): void

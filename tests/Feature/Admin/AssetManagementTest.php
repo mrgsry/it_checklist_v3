@@ -7,6 +7,7 @@ use App\Models\AssetCategory;
 use App\Models\User;
 use Database\Seeders\AssetCategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class AssetManagementTest extends TestCase
@@ -71,6 +72,31 @@ class AssetManagementTest extends TestCase
                 'quantity' => 0,
             ]))
             ->assertSessionHasErrors(['name', 'purchase_year', 'item_code', 'inventory_number', 'serial_number', 'quantity']);
+    }
+
+    public function test_optional_asset_identity_fields_may_be_empty(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $category = AssetCategory::create(['name' => 'Others']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.assets.store'), $this->assetData($category, [
+                'brand' => '',
+                'type' => '',
+                'item_code' => '',
+                'inventory_number' => '',
+                'serial_number' => '',
+            ]))
+            ->assertRedirect(route('admin.assets.index'));
+
+        $this->assertDatabaseHas('assets', [
+            'asset_category_id' => $category->id,
+            'brand' => null,
+            'type' => null,
+            'item_code' => null,
+            'inventory_number' => null,
+            'serial_number' => null,
+        ]);
     }
 
     public function test_admin_can_update_and_delete_asset(): void
@@ -140,6 +166,50 @@ class AssetManagementTest extends TestCase
             ->get(route('admin.assets.export-pdf', $query))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_admin_can_import_assets_from_csv_and_download_template(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $category = AssetCategory::create(['name' => 'Switch']);
+        $csv = implode(',', ['kategori', 'nama', 'tahun_pembelian', 'merk', 'tipe', 'kode_barang', 'nomor_inventaris', 'serial_number', 'jumlah', 'lokasi', 'keterangan'])."\n";
+        $csv .= implode(',', ['Switch', 'UniFi Switch 48', 2026, 'Ubiquiti', 'USW-48', 'IT-SW-048', 'INV-2026-048', 'SN-048', 1, 'Server Room', 'Asset import']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assets.import.template'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/vnd.ms-excel');
+
+        $this->actingAs($admin)
+            ->post(route('admin.assets.import'), ['file' => UploadedFile::fake()->createWithContent('assets.csv', $csv)])
+            ->assertRedirect(route('admin.assets.index'))
+            ->assertSessionHas('success', '1 asset berhasil diimport.');
+
+        $this->assertDatabaseHas('assets', [
+            'asset_category_id' => $category->id,
+            'item_code' => 'IT-SW-048',
+            'serial_number' => 'SN-048',
+        ]);
+    }
+
+    public function test_invalid_asset_import_is_rejected_atomically(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        AssetCategory::create(['name' => 'Switch']);
+        $headers = ['kategori', 'nama', 'tahun_pembelian', 'merk', 'tipe', 'kode_barang', 'nomor_inventaris', 'serial_number', 'jumlah', 'lokasi', 'keterangan'];
+        $rows = [
+            ['Switch', 'Valid Asset', 2026, 'Ubiquiti', 'USW-24', 'IT-VALID', 'INV-VALID', 'SN-VALID', 1, 'Server Room', ''],
+            ['Unknown', 'Invalid Asset', 2026, 'Brand', 'Type', 'IT-INVALID', 'INV-INVALID', 'SN-INVALID', 1, 'Office', ''],
+        ];
+        $csv = implode(',', $headers).'\n'.implode("\n", array_map(fn (array $row) => implode(',', $row), $rows));
+
+        $this->actingAs($admin)
+            ->from(route('admin.assets.import.form'))
+            ->post(route('admin.assets.import'), ['file' => UploadedFile::fake()->createWithContent('assets.csv', $csv)])
+            ->assertRedirect(route('admin.assets.import.form'))
+            ->assertSessionHasErrors('baris_3');
+
+        $this->assertDatabaseMissing('assets', ['item_code' => 'IT-VALID']);
     }
 
     public function test_user_cannot_access_asset_management(): void
