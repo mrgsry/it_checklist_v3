@@ -70,21 +70,20 @@ Route::prefix('admin')
             Route::get('dashboard/card-details/{card}', [Admin\DashboardController::class, 'cardDetails'])->name('dashboard.card-details');
         });
 
-        // Asset Management
-        Route::middleware('module:asset,read')->group(function () {
-            Route::get('assets/import/template', [Admin\AssetController::class, 'downloadTemplate'])->middleware('module:asset,write')->name('assets.import.template');
-            Route::get('assets/import', [Admin\AssetController::class, 'importForm'])->middleware('module:asset,write')->name('assets.import.form');
-            Route::post('assets/import', [Admin\AssetController::class, 'import'])->middleware('module:asset,write')->name('assets.import');
-            Route::get('assets/export-pdf', [Admin\AssetController::class, 'exportPdf'])->name('assets.export-pdf');
-            Route::get('assets/export-excel', [Admin\AssetController::class, 'exportExcel'])->name('assets.export-excel');
-            Route::resource('assets', Admin\AssetController::class)->middlewareFor(['store', 'update', 'destroy'], 'module:asset,write');
-            Route::middleware(['role:superadmin'])->group(function () {
-                Route::resource('asset-categories', Admin\AssetCategoryController::class)->except('show')->middlewareFor(['store', 'update', 'destroy'], 'module:asset,write');
-                Route::post('asset-categories', [Admin\AssetCategoryController::class, 'store'])->name('asset-categories.store');
-                Route::put('asset-categories/{assetCategory}', [Admin\AssetCategoryController::class, 'update'])->name('asset-categories.update');
-                Route::delete('asset-categories/{assetCategory}', [Admin\AssetCategoryController::class, 'destroy'])->name('asset-categories.destroy');
-            });
+            // Asset Management
+    Route::middleware('module:asset,read')->group(function () {
+        Route::get('assets/import/template', [Admin\AssetController::class, 'downloadTemplate'])->middleware('module:asset,write')->name('assets.import.template');
+        Route::get('assets/import', [Admin\AssetController::class, 'importForm'])->middleware('module:asset,write')->name('assets.import.form');
+        Route::post('assets/import', [Admin\AssetController::class, 'import'])->middleware('module:asset,write')->name('assets.import');
+        Route::get('assets/export-pdf', [Admin\AssetController::class, 'exportPdf'])->name('assets.export-pdf');
+        Route::get('assets/export-excel', [Admin\AssetController::class, 'exportExcel'])->name('assets.export-excel');
+        Route::resource('assets', Admin\AssetController::class)->middlewareFor(['store', 'update', 'destroy'], 'module:asset,write');
+
+        Route::middleware(['role:superadmin'])->group(function () {
+            // Cukup gunakan Route::resource ini saja!
+            Route::resource('asset-categories', Admin\AssetCategoryController::class)->except('show')->middlewareFor(['store', 'update', 'destroy'], 'module:asset,write');
         });
+    });
 
         // Memo Maker
         Route::middleware('module:document-maker,read')->group(function () {
