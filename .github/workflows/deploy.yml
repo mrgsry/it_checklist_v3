@@ -21,15 +21,13 @@ jobs:
           git fetch origin
           git reset --hard origin/main
           
-          # Gunakan composer install tanpa --no-dev
           composer install --optimize-autoloader
           
-          # Pastikan permission folder storage tetap aman
-          chmod -R 775 storage bootstrap/cache
-          
-          php artisan migrate --force
-          php artisan config:clear
-          php artisan route:clear
+          # Bersihkan cache Laravel tanpa menggunakan chmod rekursif
           php artisan cache:clear
           php artisan view:clear
+          php artisan config:clear
+          php artisan route:clear
+          
+          php artisan migrate --force
           php artisan optimize
