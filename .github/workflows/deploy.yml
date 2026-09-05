@@ -21,10 +21,12 @@ jobs:
           git fetch origin
           git reset --hard origin/main
           
-          # Install dependency composer (Spatie Permission, DomPDF, PhpSpreadsheet)
-          composer install --no-dev --optimize-autoloader
+          # Gunakan composer install tanpa --no-dev
+          composer install --optimize-autoloader
           
-          # Migrasi database & pembersihan cache
+          # Pastikan permission folder storage tetap aman
+          chmod -R 775 storage bootstrap/cache
+          
           php artisan migrate --force
           php artisan config:clear
           php artisan route:clear
