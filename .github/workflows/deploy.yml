@@ -1,0 +1,33 @@
+name: Deploy IT Checklist v3 to Server
+
+on:
+  push:
+    branches:
+      - main  # Ubah ke 'master' jika nama branch utama repo kamu 'master'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Pull Latest Code & Update Laravel
+        run: |
+          cd /home/unifi-controller/it_checklist_v3
+          
+          git config --global --add safe.directory $(pwd)
+          git fetch origin
+          git reset --hard origin/main
+          
+          # Install dependency composer (Spatie Permission, DomPDF, PhpSpreadsheet)
+          composer install --no-dev --optimize-autoloader
+          
+          # Migrasi database & pembersihan cache
+          php artisan migrate --force
+          php artisan config:clear
+          php artisan route:clear
+          php artisan cache:clear
+          php artisan view:clear
+          php artisan optimize
